@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "675275977106",
+    "project_id": "mozzarella-connection-a8589",
+    "storage_bucket": "mozzarella-connection-a8589.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:675275977106:android:3f5c8f0392f4343a3b514b",
+        "android_client_info": {
+          "package_name": "com.aziendaagricoladangelo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "675275977106-tls2978ufoudndcngkbitk88dt4ivhov.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDi-NSgPzN4W0a6bDuProGQ5Zw67T07k3M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "675275977106-tls2978ufoudndcngkbitk88dt4ivhov.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "675275977106-0fhnl9lr00rhjh266kjlnm3nb7f2n2kb.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aziendaagricoladangelo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
