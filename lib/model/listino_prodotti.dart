@@ -1,26 +1,30 @@
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'listini_prodotti.g.dart';
+part 'listino_prodotti.g.dart';
 
-@JsonSerializable()
-class ListiniProdotti extends WSResponse {
-  ListiniProdotti();
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+)
+class ListinoProdotti extends WSResponse {
+  static const String TABLE_NAME = "listini_prodotti";
+  ListinoProdotti();
 
-  factory ListiniProdotti.fromJson(Map<String, dynamic> json) =>
-      _$ListiniProdottiFromJson(json);
+  factory ListinoProdotti.fromJson(Map<String, dynamic> json) =>
+      _$ListinoProdottiFromJson(json);
 
-  Map<String, dynamic> toJson() => _$ListiniProdottiToJson(this);
+  Map<String, dynamic> toJson() => _$ListinoProdottiToJson(this);
 
   @JsonKey(name: 'prod_id')
   int? prodId;
   @JsonKey(name: 'list_id')
-  String? listId;
+  int? listId;
   num? price;
   int? sku;
 
   @override
-  ListiniProdotti.fromDBMap(Map map) {
+  ListinoProdotti.fromDBMap(Map map) {
     this.prodId = map['prod_id'];
     this.listId = map['list_id'];
     this.price = map['price'];

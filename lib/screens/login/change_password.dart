@@ -34,17 +34,23 @@ class _ChangePasswordState extends State<ChangePasswordScreen> {
 
         final userAttributes = UserAttributes(password: _password);
         final response = await Supabase.instance.client.auth.updateUser(userAttributes);
-        // if (response.error != null) {
-        //   throw 'Cambio Password fallito: ${response.error!.message}';
-        // }
+        if (response == null) {
+          throw 'Cambio Password fallito';
+        }
 
-        showMessage('Password updated');
+        showMessage('Password aggiornata');
+
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/router', arguments:this.widget.options,
+              (route) => false,
+        );
         if (Navigator.canPop(context)) {
           _btnController.success();
         } else {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            '/profile',
+            '/', arguments:this.widget.options,
                 (route) => false,
           );
         }
@@ -95,6 +101,7 @@ class _ChangePasswordState extends State<ChangePasswordScreen> {
               ),
               const SizedBox(height: 15.0),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.green,
                 controller: _btnController,
                 onPressed: () {

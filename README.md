@@ -1,4 +1,4 @@
-# supa_auth_flutter
+# mozzarella_connection
 
 A flutter starter project that illustrates how to use supabase auth to make an auth system with flutter.
 

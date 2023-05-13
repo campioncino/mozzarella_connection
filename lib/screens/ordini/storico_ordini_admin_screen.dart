@@ -1,46 +1,39 @@
 import 'package:bufalabuona/data/ordini_rest_service.dart';
-import 'package:bufalabuona/data/prodotti_rest_service.dart';
-import 'package:bufalabuona/data/utenti_rest_service.dart';
 import 'package:bufalabuona/model/categoria.dart';
 import 'package:bufalabuona/model/ordine.dart';
-import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
-import 'package:bufalabuona/screens/carrello/carello_dettaglio_screen.dart';
-import 'package:bufalabuona/screens/prodotti/prodotti_crud.dart';
-import 'package:bufalabuona/screens/punti_vendita/punti_vendita_crud.dart';
+import 'package:bufalabuona/screens/carrello/carello_dettaglio_admin_screen.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
-import '../../data/punti_vendita_rest_service.dart';
-import '../../model/prodotto.dart';
+import '../../model/ordine_ext.dart';
 
 
-class StoricoOrdiniScreen extends StatefulWidget {
-  final PuntoVendita puntoVendita;
-  const StoricoOrdiniScreen({Key? key,required this.puntoVendita}) : super(key: key);
+class StoricoOrdiniAdminScreen extends StatefulWidget {
+  const StoricoOrdiniAdminScreen({Key? key}) : super(key: key);
 
   @override
-  State<StoricoOrdiniScreen> createState() => _StoricoOrdiniScreenState();
+  State<StoricoOrdiniAdminScreen> createState() => _StoricoOrdiniAdminScreenState();
 }
 
-class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
+class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
   Categoria? _cat;
   bool _isLoading = true;
+  bool _withConfermato = false;
 
-  PuntoVendita? _puntoVendita;
+  // PuntoVendita? _puntoVendita;
 
   final GlobalKey<ScaffoldState> _refreshKey = GlobalKey<ScaffoldState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   final TextEditingController _searchController = new TextEditingController();
 
-  List<Ordine>? _values ;
-  List<Ordine> _filteredValues = [];
+  List<OrdineExt>? _values ;
+  List<OrdineExt> _filteredValues = [];
 
-  _StoricoOrdiniScreenState() {
+  _StoricoOrdiniAdminScreenState() {
     _searchController.addListener(() {
       handleSearch(_searchController.text);
     });
@@ -53,9 +46,10 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
         print(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
-        List<Ordine> list = _values!.where((v) {
+        List<OrdineExt> list = _values!.where((v) {
           return v.createdAt!.contains(text.toUpperCase())
-              || v.statoCodice!.contains(text.toUpperCase());
+              || v.statoCodice!.contains(text.toUpperCase())
+              || v.pvenditaDenominazione!.toUpperCase().contains(text.toUpperCase());
         }).toList();
         _filteredValues.clear();
         _filteredValues.addAll(list);
@@ -65,10 +59,10 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
 
   Future<void> readData() async {
     _filteredValues.clear();
-    WSResponse resp = await OrdiniRestService.internal(context).getOrdiniByPuntoVenditaId(_puntoVendita!.id);
+    WSResponse resp = await OrdiniRestService.internal(context).getAllOrdini(_withConfermato);
     if(resp.success!= null && resp.success!){
       setState((){
-        _values = OrdiniRestService.internal(context).parseList(resp.data!.toList());
+        _values = OrdiniRestService.internal(context).parseListExt(resp.data!.toList());
         _filteredValues.addAll(_values!);
       });
     }
@@ -77,6 +71,26 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
     }
   }
 
+  Widget _includiConfermato(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        const Expanded(child: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text("Includi ordini Confermati",style: TextStyle(fontSize: 20),),
+        )),
+        Switch(
+          activeColor: Colors.green,
+          inactiveThumbColor: Colors.redAccent,
+          value: _withConfermato,
+          onChanged: (bool value) {
+              setState(() {
+                _withConfermato = value;
+                readData();
+              });}
+        ),]),
+    );
+}
 
   List<Categoria> parseList(List responseBody) {
     List<Categoria> list = responseBody
@@ -95,8 +109,6 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
   }
 
   void init() async{
-    // await readProdotti();
-    _puntoVendita = this.widget.puntoVendita;
     await readData();
     setState(() {
       _isLoading=false;
@@ -113,12 +125,12 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
           body: WillPopScope(
               onWillPop: null,
               child: stackWidget()),
-          floatingActionButton: FloatingActionButton(
-          elevation: 0.0,
-          child:  const Icon(Icons.add),
-          // backgroundColor: const Color(0xFFE57373),
-          onPressed: _goToInsert
-      ),
+      //     floatingActionButton: FloatingActionButton(
+      //     elevation: 0.0,
+      //     child:  const Icon(Icons.add),
+      //     // backgroundColor: const Color(0xFFE57373),
+      //     onPressed: _goToInsert
+      // ),
       ),
     );
   }
@@ -157,6 +169,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
     return Expanded(child: Column(
       children: [
         _buildSearchBar(context),
+        _includiConfermato(context),
         SizedBox(height: 20),
         Flexible(child: _createList(context)),
       ],
@@ -183,10 +196,11 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
 
 
 
-  Widget _buildChildRow(BuildContext context, Ordine ordine, int position){
+  Widget _buildChildRow(BuildContext context, OrdineExt ordine, int position){
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Row(
           children: [
@@ -196,29 +210,30 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
                 elevation: 1.0,
                 child: InkWell(
                   onTap: ()=> _goToDetail(ordine),
-                  child: Container(
-                    foregroundDecoration:(ordine.statoCodice!=null) ? const RotatedCornerDecoration(
-                      color: Colors.red,
-                      geometry: const BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
-                      // textSpan: const TextSpan(
-                      //   text: 'NON\nATTIVO',
-                      //   style: TextStyle(fontSize: 11,color: Colors.white),
-                      // ),
-                    ) : null,
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 15,),
-                          // Text(utentiList![index].toJson().toString()),
-                          Text("Ordine numero ${ordine.numero} ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20)),
-                          Text(ordine.createdAt?.substring(0,10)?? '',style: TextStyle(fontStyle: FontStyle.italic,fontSize: 16),),
-                          Text(ordine.statoCodice?? ''),
-                          Text(ordine.dtConsegna??''),
-                        ],
-                      ),
+                  child: ListTile(
+                    trailing: Icon(Icons.chevron_right),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Ordine #${ordine.numero} "),
+                            Text("del: ${AppUtils.convertTimestamptzToStringDate(ordine.createdAt??'').substring(0,10)?? ''}",
+                              // style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        // Text(utentiList![index].toJson().toString()),
+
+
+                        // Text(utentiList![index].toJson().toString()),
+                        Text(ordine.pvenditaDenominazione??'',style: TextStyle(fontWeight: FontWeight.w800,fontSize: 16)),
+                        Text("Totale ordine: ${ordine.total} €"),
+                        Text("Stato: ${ordine.statoCodice?? ''}",style: TextStyle(fontWeight: FontWeight.w600)),
+                        Text("Consegna spedizione: ${AppUtils.formPostgresStringDate(ordine.dtConsegna?.toString().substring(0,10)?? '')}"),
+                      ],
                     ),
                   ),
                 ),
@@ -234,7 +249,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
   void _goToDetail(Ordine data){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new CarrelloDettaglioScreen(ordine: data,puntoVendita: _puntoVendita,))).then((value) => _refresh());
+        new CarrelloDettaglioAdminScreen(ordine: data,puntoVendita: null,))).then((value) => _refresh());
   }
 
   void _goToInsert(){
@@ -288,5 +303,11 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
       //_searchController.clear();
       WidgetsBinding.instance.addPostFrameCallback((_) => _searchController.clear());
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _searchController.dispose();
   }
 }

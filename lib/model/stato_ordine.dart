@@ -1,29 +1,30 @@
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'cart.g.dart';
+part 'stato_ordine.g.dart';
 
-@JsonSerializable()
-class Cart extends WSResponse {
-  Cart();
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+)
+class StatoOrdine extends WSResponse {
+  static const String TABLE_NAME = "stato_ordine";
+  StatoOrdine();
 
-  factory Cart.fromJson(Map<String, dynamic> json) =>
-      _$CartFromJson(json);
+  factory StatoOrdine.fromJson(Map<String, dynamic> json) =>
+      _$StatoOrdineFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CartToJson(this);
+  Map<String, dynamic> toJson() => _$StatoOrdineToJson(this);
 
   int? id;
-  @JsonKey(name: 'created_at')
-  String? createdAt;
-  String? expire;
-  String? status;
+  String? codice;
+  String? descrizione;
 
   @override
-  Cart.fromDBMap(Map map) {
+  StatoOrdine.fromDBMap(Map map) {
     this.id = map['id'];
-    this.createdAt = map['created_at'];
-    this.expire = map['expire'];
-    this.status = map['status'];
+    this.codice = map['codice'];
+    this.descrizione = map['descrizione'];
   }
 
   Map<String, dynamic> tableMap() {
@@ -31,9 +32,8 @@ class Cart extends WSResponse {
     if (this.id != null) {
       map['id'] = this.id;
     }
-    map['created_at']=this.createdAt ;
-    map['expire']=this.expire ;
-    map['status']=this.status ;
+    map['codice']=this.codice ;
+    map['descrizione']=this.descrizione ;
     return map;
   }
 }

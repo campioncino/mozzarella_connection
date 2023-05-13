@@ -12,16 +12,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '/components/auth_required_state.dart';
 
 
-class ProfileScreen extends StatefulWidget {
+class ProfileUnauthorizedScreen extends StatefulWidget {
   final Utente? utente;
   final Map<String?, dynamic>? options;
-  const ProfileScreen({Key? key,  this.options,this.utente}) : super(key: key);
+  const ProfileUnauthorizedScreen({Key? key,  this.options,this.utente}) : super(key: key);
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  _ProfileUnauthorizedScreenState createState() => _ProfileUnauthorizedScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  _ProfileScreenState();
+class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
+  _ProfileUnauthorizedScreenState();
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
@@ -249,6 +249,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: _scroll ,
             child: Column(
               children: [
+                SizedBox(height: 140,),
+                Text("ATTENZIONE - UTENTE NON ANCORA AUTORIZZATO"),
                 SizedBox(height: 10,),
                 // AvatarContainer(
                 //   url: _avatarUrl ?? '',
@@ -342,6 +344,7 @@ Widget formFields(){
                 height: 35.0,
               ),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.green,
                 controller: _updateProfileBtnController,
                 onPressed: () {
@@ -358,6 +361,7 @@ Widget formFields(){
                 child: const Text("Cambia password"),
               ),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.red,
                 controller: _signOutBtnController,
                 onPressed: () {

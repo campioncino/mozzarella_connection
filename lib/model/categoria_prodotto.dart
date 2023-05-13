@@ -1,27 +1,27 @@
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'categorie_prodotti.g.dart';
+part 'categoria_prodotto.g.dart';
 
 @JsonSerializable(
   includeIfNull: false,
   explicitToJson: true,
 )
-class CategorieProdotti extends WSResponse {
+class CategoriaProdotto extends WSResponse {
   static const String TABLE_NAME = "categorie_prodotti";
-  CategorieProdotti();
+  CategoriaProdotto();
 
-  factory CategorieProdotti.fromJson(Map<String, dynamic> json) =>
-      _$CategorieProdottiFromJson(json);
+  factory CategoriaProdotto.fromJson(Map<String, dynamic> json) =>
+      _$CategoriaProdottoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CategorieProdottiToJson(this);
+  Map<String, dynamic> toJson() => _$CategoriaProdottoToJson(this);
 
   int? id;
   String? codice;
   String? descrizione;
 
   @override
-  CategorieProdotti.fromDBMap(Map map) {
+  CategoriaProdotto.fromDBMap(Map map) {
     this.id = map['id'];
     this.codice = map['codice'];
     this.descrizione = map['descrizione'];

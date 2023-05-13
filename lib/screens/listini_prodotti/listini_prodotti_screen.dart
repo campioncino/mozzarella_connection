@@ -3,21 +3,24 @@ import 'package:bufalabuona/model/listino.dart';
 import 'package:bufalabuona/model/listino_prodotti.dart';
 import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/screens/listini_prodotti/listini_prodotti_crud.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
-class ListiniCrud extends StatefulWidget {
+class ListiniProdottiScreen extends StatefulWidget {
   final Listino? listino;
-  const ListiniCrud({this.listino});
+  final bool lovMode;
+  const ListiniProdottiScreen({this.listino,required this.lovMode});
+
 
   @override
-  State<ListiniCrud> createState() => _ListiniCrudState();
+  State<ListiniProdottiScreen> createState() => _ListiniProdottiScreenState();
 }
 
-class _ListiniCrudState extends State<ListiniCrud> {
+class _ListiniProdottiScreenState extends State<ListiniProdottiScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   List<ListinoProdottiExt>? _values ;
@@ -36,8 +39,16 @@ class _ListiniCrudState extends State<ListiniCrud> {
 
   void init() async {
       await readData(_listino);
+      if(_values!.isEmpty){
+        _goToProdottiCrud();
+      }
   }
 
+  _goToProdottiCrud(){
+    Navigator.push(context, MaterialPageRoute( builder: (context) =>
+    new ListiniProdottiCrud(listino: _listino,updateMode: false,))).then((value) => _refresh());
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +57,12 @@ class _ListiniCrudState extends State<ListiniCrud> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(_listino?.descrizione ?? 'Nuovo Listino'),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(FontAwesomeIcons.pencil),
+              onPressed: () => _editListino(context,_listino),
+            ),
+          ],
         ),
         resizeToAvoidBottomInset: false,
         body: WillPopScope(
@@ -92,7 +109,7 @@ class _ListiniCrudState extends State<ListiniCrud> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -105,6 +122,7 @@ class _ListiniCrudState extends State<ListiniCrud> {
 
 
   Widget _buildChildRow(BuildContext context, ListinoProdottiExt listini, int position){
+    listini;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -116,16 +134,21 @@ class _ListiniCrudState extends State<ListiniCrud> {
                 margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
                 elevation: 1.0,
                 child: InkWell(
-                  // onTap: ()=> _goToEdit(listini),
+                   onTap: ()=> _onTapItem(context,listini),
                   child: Container(
-                    foregroundDecoration:(listini.price==null || listini.price==0) ? const RotatedCornerDecoration(
-                      color: Colors.red,
-                      geometry: const BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
-                      // textSpan: const TextSpan(
-                      //   text: 'NON\nATTIVO',
-                      //   style: TextStyle(fontSize: 11,color: Colors.white),
-                      // ),
-                    ) : null,
+                    foregroundDecoration:(listini.price==null || listini.price==0) ? 
+                    // const RotatedCornerDecoration(
+                    //   color: Colors.red,
+                    //   geometry:  BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
+                    //   // textSpan: const TextSpan(
+                    //   //   text: 'NON\nATTIVO',
+                    //   //   style: TextStyle(fontSize: 11,color: Colors.white),
+                    //   // ),
+                    // ) 
+                    const RotatedCornerDecoration.withColor(color: Colors.red,  badgeSize: Size(34, 34),
+                      badgeCornerRadius: Radius.circular(8),
+                      badgePosition: BadgePosition.topEnd)
+                        : null,
                     width: double.infinity,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -134,7 +157,8 @@ class _ListiniCrudState extends State<ListiniCrud> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
 
-                            Text(listini.prodDescrzione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                            Text(listini.prodDenominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                            Text(listini.prodDescrzione ?? ''),
                             Text("${listini.prodQuantita} ${listini.prodUnimisDescrizione} "),
                           ],
                         ),
@@ -165,6 +189,7 @@ class _ListiniCrudState extends State<ListiniCrud> {
       setState((){
         _values = ListiniProdottiRestService.internal(context).parseListExt(resp.data!.toList());
         _filteredValues.addAll(_values!);
+        _filteredValues.sort((a, b) => b.price!.compareTo(a.price!));
         _isLoading=false;
       });
     }
@@ -178,4 +203,26 @@ class _ListiniCrudState extends State<ListiniCrud> {
     _values!.clear();
     readData(_listino);
   }
+
+  _editListino(BuildContext context, Listino? listino){
+    Navigator.push(context,  MaterialPageRoute(
+        builder: (context) =>
+        new ListiniProdottiCrud(listino: listino, listinoProdotti: _filteredValues,updateMode: true,))).then((value) => _refresh());
+
+  }
+
+  _goToInsert(){
+    Navigator.push(context,  MaterialPageRoute(
+        builder: (context) =>
+        new ListiniProdottiCrud(listino: null, listinoProdotti: null,updateMode: false,))).then((value) => _refresh());
+
+  }
+
+  void _onTapItem(BuildContext context, ListinoProdotti p) {
+    if (this.widget.lovMode) {
+       debugPrint(p.toString());
+
+      Navigator.pop(context, p);  }
+    }
+
 }

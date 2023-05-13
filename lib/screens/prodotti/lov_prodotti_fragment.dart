@@ -1,30 +1,29 @@
 import 'dart:async';
 
-import 'package:bufalabuona/model/ws_response.dart';
-import 'package:bufalabuona/screens/punti_vendita/punti_vendita_crud.dart';
+import 'package:bufalabuona/model/prodotto.dart';
+import 'package:bufalabuona/screens/prodotti/prodotti_crud.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../model/punto_vendita.dart';
 
-class LovPuntiVenditaFragment extends StatefulWidget {
+class LovProdottiFragment extends StatefulWidget {
   final String appbarTitle;
   final Function onSearch;
   final bool showInsert;
   final Color? styleColor;
 
 
-  const LovPuntiVenditaFragment(
+  const LovProdottiFragment(
       {required this.appbarTitle,
         required this.onSearch,
         this.showInsert: false,
         this.styleColor});
 
   @override
-  _LovPuntiVenditaFragmentState createState() => new _LovPuntiVenditaFragmentState();
+  _LovProdottiFragmentState createState() => new _LovProdottiFragmentState();
 }
 
-class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
+class _LovProdottiFragmentState extends State<LovProdottiFragment> {
   Icon actionIcon = new Icon(
     Icons.search,
     color: Colors.blueGrey,
@@ -33,10 +32,10 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
   final key = new GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = new TextEditingController();
 
-  List<PuntoVendita>? _values = [];
-  List<PuntoVendita> _filteredValues = [];
+  List<Prodotto>? _values = [];
+  List<Prodotto> _filteredValues = [];
 
-  _LovPuntiVenditaFragmentState() {
+  _LovProdottiFragmentState() {
     _searchController.addListener(() {
       handleSearch(_searchController.text);
     });
@@ -52,8 +51,8 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
 
   }
 
-  Future<List<PuntoVendita>> initValues() async{
-    List<PuntoVendita> resp = await this.widget.onSearch();
+  Future<List<Prodotto>> initValues() async{
+    List<Prodotto> resp = await this.widget.onSearch();
     return resp;
   }
 
@@ -80,8 +79,8 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
         _filteredValues.clear();
         _filteredValues.addAll(_values!);
       } else {
-        List<PuntoVendita> list = _values!.where((v) {
-          return v.denominazione!.contains(text.toUpperCase());
+        List<Prodotto> list = _values!.where((v) {
+          return v.descrizione!.contains(text.toUpperCase());
               // || v.catId!.contains(text.toUpperCase());
         }).toList();
         _filteredValues.clear();
@@ -110,7 +109,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
           ? new FloatingActionButton(
         elevation: 0.0,
         child:Icon(FontAwesomeIcons.plus),
-        onPressed: _editPuntoVendita,
+        onPressed: _editProdotti,
       )
           : new Container(
         height: 0.0,
@@ -192,7 +191,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
     Navigator.pop(context, p);
   }
 
-  Widget row(PuntoVendita p, int position) {
+  Widget row(Prodotto p, int position) {
     return Row(
       children: <Widget>[
         Expanded(
@@ -200,7 +199,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                p.id.toString(),
+                p.prodId.toString(),
                 style: TextStyle(
                   fontSize: 16.0,
                   color: Colors.grey,
@@ -209,19 +208,19 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
                 ),
               ),
               Text(
-                p.denominazione?.trim() ?? '',
+                p.descrizione?.trim() ?? '',
                 style: TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                p.indirizzo?.trim().toLowerCase() ?? '',
+                p.codice?.trim().toLowerCase() ?? '',
                 style: TextStyle(
                   fontSize: 18.0,
                 ),
               ),
-              Text("Id Fatturazione: ${p.idFatturazione?.trim() ?? ''}",
+              Text("${p.quantita} ${p.unimisCodice}",
                 style: TextStyle(
                   fontSize: 16.0,
                 ),
@@ -234,7 +233,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
     );
   }
 
-  _buttons(PuntoVendita p, int position) {
+  _buttons(Prodotto p, int position) {
     if (p.dtFinVal != null) {
       return new Container();
     }
@@ -244,14 +243,14 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
           FontAwesomeIcons.penToSquare,
           size: 20.0,
         ),
-        onPressed: () => _editPuntoVendita(puntoVendita: p),
+        onPressed: () => _editProdotti(prodotti: p),
       ),
       IconButton(
           icon: new Icon(
             FontAwesomeIcons.deleteLeft,
             size: 20.0,
           ),
-          onPressed: () => _deletePuntoVendita(context, p, position)),
+          onPressed: () => _deleteProdotti(context, p, position)),
     ]);
   }
 
@@ -267,10 +266,10 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
         ]));
   }
 
-  void _editPuntoVendita({PuntoVendita? puntoVendita}) async {
-    PuntoVendita? p = await Navigator.push(
+  void _editProdotti({Prodotto? prodotti}) async {
+    Prodotto? p = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => PuntiVenditaCrud(puntoVendita: puntoVendita)),
+      MaterialPageRoute(builder: (context) => ProdottiCrud(prodotto: prodotti)),
     );
 
     if (p != null) {
@@ -299,8 +298,8 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
     }
   }
 
-  void _deletePuntoVendita(BuildContext context, PuntoVendita p, int position) async {
-    // PuntoVenditaService.internal(context).deletePuntoVendita(p).then((result) {
+  void _deleteProdotti(BuildContext context, Prodotto p, int position) async {
+    // ProdottiService.internal(context).deleteProdotti(p).then((result) {
     //   setState(() {
     //     if (result > 0) {
     //       _values!.remove(p);

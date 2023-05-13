@@ -1,32 +1,36 @@
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'stato_ordine.g.dart';
+part 'unimis.g.dart';
 
-@JsonSerializable()
-class StatoOrdine extends WSResponse {
-  StatoOrdine();
+@JsonSerializable(
+  includeIfNull: false,
+  explicitToJson: true,
+)
+class Unimis extends WSResponse {
+  static const String TABLE_NAME = "unimis";
+  Unimis();
 
-  factory StatoOrdine.fromJson(Map<String, dynamic> json) =>
-      _$StatoOrdineFromJson(json);
+  factory Unimis.fromJson(Map<String, dynamic> json) =>
+      _$UnimisFromJson(json);
 
-  Map<String, dynamic> toJson() => _$StatoOrdineToJson(this);
-  @JsonKey(name: 'stato_id')
-  int? statoId;
+  Map<String, dynamic> toJson() => _$UnimisToJson(this);
+
+  int? id;
   String? codice;
   String? descrizione;
 
   @override
-  StatoOrdine.fromDBMap(Map map) {
-    this.statoId = map['stato_id'];
+  Unimis.fromDBMap(Map map) {
+    this.id = map['id'];
     this.codice = map['codice'];
     this.descrizione = map['descrizione'];
   }
 
   Map<String, dynamic> tableMap() {
     var map = new Map<String, dynamic>();
-    if (this.statoId != null) {
-      map['stato_id'] = this.statoId;
+    if (this.id != null) {
+      map['id'] = this.id;
     }
     map['codice']=this.codice ;
     map['descrizione']=this.descrizione ;

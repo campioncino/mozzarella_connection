@@ -1,69 +1,71 @@
-import 'package:bufalabuona/model/ordine.dart';
-import 'package:bufalabuona/model/prodotto.dart';
-import 'package:dio/dio.dart';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class OrdiniRestService {
+import '../model/cart.dart';
+
+class CartRestService {
   BuildContext context;
 
-  static OrdiniRestService? _instance;
+  static CartRestService? _instance;
 
-  factory OrdiniRestService(context) =>
-      _instance ?? OrdiniRestService.internal(context);
+  factory CartRestService(context) =>
+      _instance ?? CartRestService.internal(context);
 
-  OrdiniRestService.internal(this.context);
+  CartRestService.internal(this.context);
 
-  Future<List<Ordine>?> getAllOrdini() async{
+  Future<List<Cart>?> getAllCart() async{
     try{
       var response = await Supabase.instance.client
-          .from(Ordine.TABLE_NAME)
+          .from(Cart.TABLE_NAME)
           .select()
       // .order('prod_id', ascending: true)
-          .execute();
+          ;
 
-      if(response.data!=null){
-        return parseList(response.data.toList());
+      if(response!=null){
+        return parseList(response.toList());
       }
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return null;
     }
   }
 
-  List<Ordine> parseList(List responseBody) {
-    List<Ordine> list = responseBody
-        .map<Ordine>((f) => Ordine.fromJson(f))
+  List<Cart> parseList(List responseBody) {
+    List<Cart> list = responseBody
+        .map<Cart>((f) => Cart.fromJson(f))
         .toList();
     //ordiniamoli dal più recente al più vecchio
     // list.sort((a, b) => b.presId!.compareTo(a.presId!));
     return list;
   }
 
-  Future<Ordine?> getOrdine(int id) async{
+  Future<Cart?> getCart(int id) async{
     try{
       var response = await Supabase.instance.client
-          .from(Ordine.TABLE_NAME)
+          .from(Cart.TABLE_NAME)
           .select()
           .eq('id',id)
       // .order('prod_id', ascending: true)
-          .execute();
+          ;
 
-      if(response.data!=null){
-        return Ordine.fromJson(response.data);
+      if(response!=null){
+        return Cart.fromJson(response);
       }
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return null;
     }
   }
 
-  Future<bool> upsertOrdine(Ordine ordine) async{
+  Future<bool> upsertCart(Cart cart) async{
     try{
       var response = await Supabase.instance.client
-          .from(Ordine.TABLE_NAME)
-          .upsert(ordine.tableMap())
-          .execute();
+          .from(Cart.TABLE_NAME)
+          .upsert(cart.tableMap())
+          ;
       if (response.error == null) {
         // throw "Update profile failed: ${response.error!.message}";
         return true;
@@ -72,7 +74,8 @@ class OrdiniRestService {
       }
 
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return false;
     }
   }

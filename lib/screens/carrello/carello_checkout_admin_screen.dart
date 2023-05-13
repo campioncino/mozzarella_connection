@@ -1,8 +1,5 @@
-import 'package:bufalabuona/data/cart_item_rest_service.dart';
-import 'package:bufalabuona/data/listini_prodotti_rest_service.dart';
 import 'package:bufalabuona/data/listini_rest_service.dart';
 import 'package:bufalabuona/data/ordini_rest_service.dart';
-import 'package:bufalabuona/data/prodotti_rest_service.dart';
 import 'package:bufalabuona/data/punti_vendita_rest_service.dart';
 import 'package:bufalabuona/model/cart_item_ext.dart';
 import 'package:bufalabuona/model/listino.dart';
@@ -10,38 +7,47 @@ import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/pdf/pdf_ordine_api.dart';
 import 'package:bufalabuona/screens/listini_prodotti/listini_prodotti_screen.dart';
 // import 'package:bufalabuona/screens/prodotti/lov_prodotti_fragment.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
-class CarrelloDettaglioAdminScreen extends StatefulWidget {
+import '../../data/cart_item_rest_service.dart';
+import '../../model/cart_item.dart';
+import '../../pdf/pdf_api.dart';
+
+class CarrelloCheckoutAdminScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
   final Ordine? ordine;
-  const CarrelloDettaglioAdminScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
+  final List<CartItemExt>? adminValues;
+  final bool readOnlyMode;
+  const CarrelloCheckoutAdminScreen({Key? key,required this.ordine,required this.puntoVendita,this.adminValues,required this.readOnlyMode}) : super(key: key);
 
   @override
-  State<CarrelloDettaglioAdminScreen> createState() => _CarrelloDettaglioAdminScreenState();
+  State<CarrelloCheckoutAdminScreen> createState() => _CarrelloCheckoutAdminScreenState();
 }
 
-enum TipoPagamento { fattura, ricevuta }
+enum TipoPagamento { FATTURA, RICEVUTA, EXTRA }
 
-class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScreen> {
+class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
   final dateFormatter = new DateFormat('dd-MM-yyyy');
+  final postgresDateFormatter = new DateFormat('yyyy-MM-dd');
   PuntoVendita? _puntoVendita;
   Ordine? _ordine;
-  Listino? _listino;
+  Ordine? _ordineInviato;
+  // Listino? _listino;
   List<CartItemExt> _values =[];
   List<CartItemExt> _adminValues=[];
   List<CartItemExt> _filteredValues = [];
   bool _isLoading=true;
   bool? _sendOrder = false;
+  bool _isReadOnly = true;
   Map<ListinoProdottiExt,int> _listCart = Map();
 
   DateTime? _dtSpedizione;
@@ -51,7 +57,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
   final RoundedLoadingButtonController _confermaController =
   RoundedLoadingButtonController();
 
-  final RoundedLoadingButtonController _rifiutaontroller =
+  final RoundedLoadingButtonController _rifiutaController =
   RoundedLoadingButtonController();
 
   String? alertDialogValueText;
@@ -64,96 +70,92 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
     _ordine=this.widget.ordine;
     _puntoVendita=this.widget.puntoVendita;
     _filteredValues.clear();
-
+    _isReadOnly= this.widget.readOnlyMode;
     init();
   }
 
   void init() async {
-    await readData();
-    await loadPuntoVendita();
-    await loadListino();
+    // await readData();
+    // await loadPuntoVendita();
+    // await loadListino();
     setState(() {
+      _adminValues.addAll(this.widget.adminValues!);
       _isLoading=false;
       _dataSpedizioneController.text = dateFormatter.format(_ordine!.dtConsegna!);
       _noteController.text=_ordine!.note??'Non sono state inserite note per la consegna';
-      _tipoPagamento = (_puntoVendita!.flRicevuta!=null)  ? TipoPagamento.fattura : TipoPagamento.ricevuta;
+      if(_ordine!.tipoFiscaleCodice!=null){
+        _tipoPagamento = (_ordine!.tipoFiscaleCodice=='FATTURA') ? TipoPagamento.FATTURA : TipoPagamento.RICEVUTA;
+      }else{
+      _tipoPagamento = (_puntoVendita!.flRicevuta!=null)  ? TipoPagamento.FATTURA : TipoPagamento.RICEVUTA;}
     });
   }
 
-  loadPuntoVendita() async{
-    _puntoVendita =await PuntiVenditaRestService.internal(context).getPuntoVendita(_ordine!.pvenditaId!);
-  }
+  // loadListino() async{
+  //   WSResponse resp = await ListiniRestService.internal(context).getListinoByCatId(_puntoVendita!.catId!);
+  //   if(resp.success!= null && resp.success!){
+  //     setState(() {
+  //       _listino=ListiniRestService.internal(context).parseList(resp.data!.toList()).first;
+  //     });
+  //   }
+  // }
 
-  loadListino() async{
-    WSResponse resp = await ListiniRestService.internal(context).getListinoByCatId(_puntoVendita!.catId!);
-    if(resp.success!= null && resp.success!){
-      setState(() {
-        _listino=ListiniRestService.internal(context).parseList(resp.data!.toList()).first;
-      });
-    }
-  }
-
-  readData() async{
-    if(_ordine!=null){
-      WSResponse resp = await CartItemRestService.internal(context).getCartItemExtByOrdineId(_ordine!.id!);
-      if(resp.success!= null && resp.success!){
-        setState((){
-          _values = CartItemRestService.internal(context).parseListExt(resp.data!.toList());
-          _filteredValues.addAll(_values);
-          _adminValues.addAll(_values);
-        });
-      }
-      else{
-        debugPrint("errore!!");
-      }
-      // setState(() {
-      //   _values.clear();
-      //   _values.addAll(_listCart.keys);
-      //   _filteredValues=_values;
-      // });
-    }
-  }
+  // readData() async{
+  //   if(_ordine!=null){
+  //     WSResponse resp = await CartItemRestService.internal(context).getCartItemExtByOrdineId(_ordine!.id!);
+  //     if(resp.success!= null && resp.success!){
+  //       setState((){
+  //         _values = CartItemRestService.internal(context).parseListExt(resp.data!.toList());
+  //         _filteredValues.addAll(_values);
+  //         _adminValues.addAll(_values);
+  //       });
+  //     }
+  //     else{
+  //       debugPrint("errore!!");
+  //     }
+  //     // setState(() {
+  //     //   _values.clear();
+  //     //   _values.addAll(_listCart.keys);
+  //     //   _filteredValues=_values;
+  //     // });
+  //   }
+  // }
 
 
 
   Widget buttons() {
-    var confermaBtn = RoundedLoadingButton(
-      borderRadius: 15,
-      color: Colors.green,
-      controller: _confermaController,
-      onPressed: () {
-        _submit('CONFERMA');
-      },
-      child: Text('CONFERMA',
-        style: TextStyle(fontSize: 16, color: Colors.white),
-      ),
-    );
-
-    var rifiutaBtn = RoundedLoadingButton(
-      borderRadius: 15,
-      color: Colors.red,
-      controller: _rifiutaontroller,
-      onPressed: () {
-        _submit('RIFIUTA');
-      },
-      child: const Text(
-        'RIFIUTA',
-        style: TextStyle(fontSize: 16, color: Colors.white),
-      ),
-    );
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if(this._ordine!.statoCodice=='INVIATO')  Flexible(
-          child: confermaBtn,
+        if(!_isReadOnly && calcolaProdottiVendibili()>0)  Flexible(
+          child: RoundedLoadingButton(
+            borderRadius: 15,
+            color: Colors.green,
+            controller: _confermaController,
+            onPressed: () {
+              _submit('CONFERMA');
+            },
+            child: Text('CONFERMA',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
           flex: 5,
         ),
         SizedBox(
           width: 20,
         ),
-        if(this._ordine!.statoCodice=='INVIATO')  Flexible(
-          child: rifiutaBtn,
+        if(!_isReadOnly)  Flexible(
+          child: RoundedLoadingButton(
+            borderRadius: 15,
+            color: Colors.red,
+            controller: _rifiutaController,
+            onPressed: () {
+              _submit('RIFIUTA');
+            },
+            child: const Text(
+              'RIFIUTA',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
           flex: 3,
         )
       ],
@@ -167,6 +169,12 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
       child: Scaffold(
         appBar: AppBar(
           title: Text('Dettaglio Ordine'),
+          actions: [FloatingActionButton(
+           backgroundColor: Colors.white70,
+          elevation: 0.0,
+          child:   Icon(Icons.picture_as_pdf_rounded,size: 36,color: Colors.red[900],),
+          // backgroundColor: const Color(0xFFE57373),
+          onPressed:() async =>await _generatePdf())],
         ),
         resizeToAvoidBottomInset: false,
         body: WillPopScope(
@@ -197,6 +205,8 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
     return new Stack(children: listWidgets);
   }
 
+
+
   Widget body() {
     return Expanded(child: Column(
       mainAxisSize: MainAxisSize.max,
@@ -212,21 +222,36 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.max,
               children: [
-                destinatario(),
+                ordineCard(),
+                puntoVenditaCard(),
+                // destinatario(),
                 dataSpedizioneCard(),
                 noteSpedizioneCard(),
-                if(this._ordine!.statoCodice=='INVIATO')
-                TextButton.icon(
-                  onPressed: ()=>aggiungiProdotto(),
-                  label: Text("AGGIUNGI PRODOTTO"),
-                  icon: Icon(Icons.add, size: 20),
-                ),
+                pagamentoCard(),
+                // if(this._ordine!.statoCodice=='INVIATO')
+                // TextButton.icon(
+                //   onPressed: ()=>aggiungiProdotto(),
+                //   label: Text("AGGIUNGI PRODOTTO"),
+                //   icon: Icon(Icons.add, size: 20),
+                // ),
               ],
             ),
           ),
         ),
-
-        Flexible(child: _createList(context)),
+        Flexible(
+            child: Card(
+          child: SingleChildScrollView(
+            child: ExpansionTile(
+                title: Text("Prodotti : ${calcolaProdottiVendibili()}"),
+                subtitle: totaleOrdineCard(),
+                children: <Widget>[
+                  _createList(context),
+                  SizedBox(
+                    height: 10,
+                  )
+                ]),
+          ),
+        )),
       ],
     ));
   }
@@ -239,6 +264,8 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
       return AppUtils.emptyList(context,FontAwesomeIcons.slash);
     }
     var list = ListView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
         itemCount: _adminValues.length,
         itemBuilder: (context, position) {
           return _buildChildRow(context, _adminValues[position], position);
@@ -247,113 +274,109 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
     return RefreshIndicator(child: list, onRefresh: _refresh,strokeWidth: 3,);
   }
 
+
   Future<void> _refresh() async{
     _filteredValues.clear();
     _values.clear();
     _adminValues.clear();
-    await readData();
-    await loadPuntoVendita();
+    _adminValues.addAll(this.widget.adminValues!);
+
+    // await readData();
+    // await loadPuntoVendita();
   }
 
   Widget _buildChildRow(BuildContext context, CartItemExt listini, int position){
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Flexible(
-              child: Card(
-                margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
-                elevation: 1.0,
-                child: InkWell(
-                  // onTap: ()=> _goToEdit(listini),
-                  child: Container(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Row(
-                        children: [
-                        Expanded(
-                          child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                                  Text(listini.prodDescrizione ?? ''),
-                                  Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
-                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16,color: Colors.black87,fontWeight: FontWeight.w700),),
-                                  Text("${listini.statoCodice??''}"),
-                                ],
-                              ),
-                        ),
-                          Column(
-                            mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              IconButton(icon: Container(
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(50),
-                                      border: Border.all(width: 4, color: Colors.white)),
-                                  child: (listini.quantita!=null && listini.quantita!>1) ? Icon(FontAwesomeIcons.minus,size: 20,color: Colors.black54):Icon(FontAwesomeIcons.trash, size: 22, color: Colors.red,)),
-                                    onPressed: (){setState(() {
-                                    if(listini.quantita!>0){listini.quantita = listini.quantita!-1;}
-                                  });}),
-                              SizedBox(width: 10,),
-                              Text(listini.quantita.toString() ,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w700),),
-                              SizedBox(width: 10,),
-                              IconButton(icon: Container(
-                                  decoration: BoxDecoration(
-                                      color: Colors.teal[800],
-                                      borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(width: 5, color: Colors.teal[800]!)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.white70,)),onPressed: (){setState(() {
-                                        if(listini.quantita!=null){
-                                          listini.quantita = listini.quantita!+1;
-                                        }
-                                      });},)
-                            ],
-                          )
-                        ],
+    return Visibility(
+      visible: listini.quantita!>0 ? true : false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Container(
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: Row(
+                      children: [
+                      Expanded(
+                        child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 14),),
+                                Text(listini.prodDescrizione ?? ''),
+                                Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
+                                // Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16,color: Colors.black87,fontWeight: FontWeight.w700),),
+                                // Text("${listini.statoCodice??''}"),
+                                SizedBox(height: 5,)
+                              ],
+                            ),
                       ),
+                        Column(
+                          mainAxisAlignment:MainAxisAlignment.spaceBetween ,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(listini.quantita.toString() ,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w700),),
+                          ],
+                        )
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
 
-  Widget destinatario(){
-    return Container(child: Card(
-      child: Column(children: [
-        puntoVenditaCard(),
-        indrizzoSpedizione(),
-      ],),
-    ),);
-  }
+  // Widget destinatario(){
+  //   return Container(child: Card(
+  //     child: Column(children: [
+  //       puntoVenditaCard(),
+  //       indrizzoSpedizione(),
+  //     ],),
+  //   ),);
+  // }
 
-
+  Widget ordineCard(){
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text("Ordine #${_ordine!.numero}",style: TextStyle(fontWeight: FontWeight.w600),),
+          Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
+        ],),
+    );}
 
   Widget puntoVenditaCard(){
-    return ListTile(
-      leading: Icon(FontAwesomeIcons.house),
-      title: Container(
-       child: Column(
-         crossAxisAlignment: CrossAxisAlignment.start,
-         mainAxisAlignment: MainAxisAlignment.start,
-         children: [
-           Text("Odine numero : ${_ordine!.numero}"),
-           Text("del : ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
-           Text("Destinatario : ${_puntoVendita!.denominazione}"),
-           Text("p.iva : ${_puntoVendita!.partitaIva}")
-         ],
-       ),
-
-      ),
+    return Card(
+    child: ListTile(
+    leading: Icon(FontAwesomeIcons.house),
+    title:Text("${_puntoVendita?.denominazione}"),
+    subtitle: Text("${_puntoVendita?.ragSociale}"))
+      // child: ListTile(
+      //   leading: Icon(FontAwesomeIcons.house),
+      //   title: Container(
+      //    child: Column(
+      //      crossAxisAlignment: CrossAxisAlignment.start,
+      //      mainAxisAlignment: MainAxisAlignment.start,
+      //      children: [
+      //        // Text("Ordine numero : ${_ordine!.numero}"),
+      //        // Text("del : ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
+      //        Text("Destinatario : ${_puntoVendita!.denominazione}"),
+      //        Text("p.iva : ${_puntoVendita!.partitaIva}")
+      //      ],
+      //    ),
+      //
+      //   ),
+      // ),
     );
   }
 
@@ -396,17 +419,30 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
 
   String _calcolaTotaleOrdine(){
      num total=0;
-    _values.forEach((value) {
+    _adminValues.forEach((value) {
       var price= value.price! * value.quantita!;
       total+=price;
     });
     return total.toString();
   }
 
+  Widget totaleOrdineCard(){
+    return Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),);
+  }
+
+  int calcolaProdottiVendibili(){
+    int total=0;
+    _adminValues.forEach((element) {
+      if(element.quantita!>0){
+        total+=1;
+      }
+    });
+    return total;
+  }
 
   _submit(String stato) async {
     bool _isOrderSended = false;
-    _sendOrder = await askContinua(context);
+    _sendOrder = await askContinua(context,stato);
     if(_sendOrder!){
       setState(() {
         _isLoading=true;
@@ -415,7 +451,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
     }
     setState(() {
       _confermaController.reset();
-      _rifiutaontroller.reset();
+      _rifiutaController.reset();
       _isLoading=false;
     });
     if(_isOrderSended){
@@ -434,9 +470,10 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
 
   }
 
-  Future<bool?> askContinua(BuildContext context) async {
+  Future<bool?> askContinua(BuildContext context,String stato) async {
     String title = "Attenzione";
-    String message ="Vuoi confermare l'ordine dei prodotti presenti nel carrello?";
+    String _value = (stato =='CONFERMA') ? 'confermare' : 'rifiutare';
+    String message ="Vuoi $_value l'ordine dei prodotti presenti nel carrello?";
     bool? ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -445,7 +482,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
           content: Text(message),
           actions: <Widget>[
             TextButton(
-                child: Text("ANNuLLA"),
+                child: Text("ANNULLA"),
                 onPressed: () {
                   Navigator.pop(context,false);
                 }),
@@ -460,44 +497,98 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
     return ok!;
   }
 
-  _createOrderAndRegisterCartItems(String statoOrdine) async {
-    bool success=false;
+
+
+  Future<bool> _createOrderAndRegisterCartItems(String statoOrdine) async {
+    bool isOrderOk=false;
+    bool updateProducts=false;
+    bool insertProducts=false;
+    List<CartItem> listCartItemsToUpdate = [];
+    List<CartItem> listCartItemsToInsert = [];
     if(statoOrdine == 'CONFERMA') {
       _ordine!.statoCodice = 'CONFERMATO';
     }else if(statoOrdine == 'RIFIUTA'){
       _ordine!.statoCodice = 'RIFIUTATO';
     }
+    _ordine!.total = num.parse(_calcolaTotaleOrdine());
+    _ordine!.dtConsegna= postgresDateFormatter.parse(AppUtils.toPostgresStringDate(_dataSpedizioneController.text));
+    _ordine!.tipoFiscaleCodice =_tipoPagamento!.name;
 
-    WSResponse  resp =await  OrdiniRestService.internal(context).updateOrdine(_ordine!);
 
-    if(resp.success!=null && resp.success!){
-      success = true;
+    WSResponse  resp = await OrdiniRestService.internal(context).upsertOrdine(_ordine!);
+    if(resp.errors!=null){
+      debugPrint(resp.errors.toString());
+      _confermaController.reset();
+      _rifiutaController.reset();
+    }
+    if(resp.success!=null && resp.success! && _adminValues.length>0) {
+      _ordineInviato= resp.data!.first;
+      _adminValues.forEach((element) {
+          CartItem tmp = new CartItem();
+          tmp.orderId = _ordineInviato!.id;
+          // tmp.orderId = 1;
+          tmp.prodId = element.prodId;
+          tmp.quantita = element.quantita;
+          tmp.statoCodice = element.statoCodice;
+          tmp.note = element.note;
+          if(element.id!=null){
+            tmp.id =element.id;
+            listCartItemsToUpdate.add(tmp);
+          }else{
+            listCartItemsToInsert.add(tmp);
+          }
+      });
+
+      debugPrint("Da aggiornare : ${listCartItemsToUpdate.length}");
+      debugPrint("Da inserire : ${listCartItemsToInsert.length}");
+
+      ///PRATICAMENTE DEVO SPLITTARE LE DUE OPERAZIONI : INSERT LISTA NUOVI PRODOTTI
+      /// UPDATE LISTA PRODOTTI ORIGINALI
+      if(statoOrdine=='CONFERMA'){
+        WSResponse respCartUpdate = await CartItemRestService.internal(context).upsertMultipleCartItem(listCartItemsToUpdate);
+        if(respCartUpdate.success!=null && respCartUpdate.success!){
+          debugPrint("abbiamo aggiornato i prodotti nel carrello");
+          updateProducts=true;
+         }
+
+        if(listCartItemsToInsert.isNotEmpty){
+          WSResponse respCartInsert = await CartItemRestService.internal(context).insertMultipleCartItem(listCartItemsToInsert);
+          if(respCartInsert.success!=null && respCartInsert.success!){
+            debugPrint("abbiamo creato inserito i nuovi prodotti e carrello");
+            insertProducts=true;
+          }
+        }
+      }
+
     }
 
-    return success;
+    if(updateProducts && (listCartItemsToInsert.isEmpty || insertProducts)){
+      isOrderOk=true;
+    }
+    return isOrderOk;
   }
 
-  aggiungiProdotto() async{
-    List<ListinoProdottiExt> list=[];
+  // _createOrderAndRegisterCartItems(String statoOrdine) async {
+  //   bool success=false;
+  //   if(statoOrdine == 'CONFERMA') {
+  //     _ordine!.statoCodice = 'CONFERMATO';
+  //   }else if(statoOrdine == 'RIFIUTA'){
+  //     _ordine!.statoCodice = 'RIFIUTATO';
+  //   }
+  //
+  //   _ordine!.tipoFiscaleCodice =_tipoPagamento!.name;
+  //
+  //   debugPrint(_ordine!.tipoFiscaleCodice);
+  //
+  //   WSResponse  resp =await  OrdiniRestService.internal(context).updateOrdine(_ordine!);
+  //
+  //   if(resp.success!=null && resp.success!){
+  //     success = true;
+  //   }
+  //
+  //   return success;
+  // }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => ListiniProdottiScreen(listino: _listino,lovMode: true,))
-    ).then((value){
-      if(value!=null){
-        ListinoProdottiExt lp = value as ListinoProdottiExt;
-        CartItemExt cartItemTmp = CartItemExt.fromJson(lp.toJson());
-        cartItemTmp.quantita=1;
-        debugPrint(cartItemTmp.toString());
-        setState(() {
-          _adminValues.add(cartItemTmp);
-        });
-
-      }
-    });
-
-  }
 
   Widget dataSpedizioneCard(){
     return Padding(
@@ -518,7 +609,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
                     ))),
                 ListTile(leading: Icon(FontAwesomeIcons.truckFast,color: Colors.black54,size: 36,),
                   title: dtSpedizione(),
-                  trailing:   IconButton(icon:Icon(Icons.edit_calendar,color: Colors.black87,),onPressed:()=> _chooseDtFineTrt(context)),
+                  trailing:   IconButton(icon:Icon(Icons.edit_calendar,color: _isReadOnly ? Colors.grey : Colors.black87,),onPressed: _isReadOnly ? null : ()=> _chooseDtFineTrt(context)),
 
                 ),
               ],
@@ -590,15 +681,15 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
               style: TextStyle(fontWeight: FontWeight.bold,fontSize: 15,color: Colors.black87),
             ),
             // title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-            trailing: IconButton(icon: Icon(Icons.edit,color: Colors.black87,),
-                onPressed: ()=>_displayTextInputDialog(context,_noteController,"Inserisci note per la consegna")),
+            trailing: IconButton(icon: Icon(Icons.edit,color: _isReadOnly ? Colors.grey :Colors.black87,),
+                onPressed: _isReadOnly ? null : ()=>_displayTextInputDialog(context,_noteController,"Inserisci note per la consegna",_ordine!.note)),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _displayTextInputDialog(BuildContext context, TextEditingController _textFieldController, String title) async {
+  Future<void> _displayTextInputDialog(BuildContext context, TextEditingController _textFieldController, String title, String? defaultValue) async {
     return showDialog(
         context: context,
         builder: (context) {
@@ -620,6 +711,8 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
                 child: const Text('Annulla'),
                 onPressed: () {
                   setState(() {
+                    if(defaultValue!=null){
+                    _textFieldController.text = defaultValue;}
                     Navigator.pop(context);
                   });
                 },
@@ -641,36 +734,64 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
 
   Widget pagamentoCard(){
     return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          RadioListTile<TipoPagamento>(
-            title: const Text('Fattura'),
-            value: TipoPagamento.fattura,
-            groupValue: _tipoPagamento,
-            onChanged: (TipoPagamento? value) {
-              setState(() {
-                _tipoPagamento = value;
-              });
-            },
+          Expanded(
+            flex: 1,
+            child: RadioListTile<TipoPagamento>(
+              title: const Text('Fattura'),
+              value: TipoPagamento.FATTURA,
+              groupValue: _tipoPagamento,
+              onChanged: _isReadOnly ?null :(TipoPagamento? value) {
+                setState(() {
+                  _tipoPagamento = value;
+                });
+              },
+            ),
           ),
-          RadioListTile<TipoPagamento>(
-            title: const Text('Ricevuta Fiscale'),
-            value: TipoPagamento.ricevuta,
-            groupValue: _tipoPagamento,
-            onChanged: (TipoPagamento? value) {
-              setState(() {
-                _tipoPagamento = value;
-              });
-            },
+          Expanded(
+            flex: 1,
+            child: RadioListTile<TipoPagamento>(
+              title: const Text('Ricevuta'),
+              value: TipoPagamento.RICEVUTA,
+              groupValue: _tipoPagamento,
+              onChanged: _isReadOnly ?null :(TipoPagamento? value) {
+                setState(() {
+                  _tipoPagamento = value;
+                });
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget totaleOrdineCard(){
-    return Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),);
-  }
+  bool _checkbox = false;
+  bool _checkboxListTile = false;
 
+
+  // Widget pagamento(){
+  //   return Card(child: Row(crossAxisAlignment: CrossAxisAlignment.start,
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //   children: [
+  //     CheckboxListTile(
+  //       controlAffinity: ListTileControlAffinity.leading,
+  //       title: Text('I am true'),
+  //       value: _checkbox,
+  //       onChanged: (value) {
+  //         setState(() {
+  //           _checkbox = !_checkbox;
+  //         });
+  //       },
+  //     ),
+  //   ],),);
+  // }
+
+  _generatePdf() async{
+    final pdfFile = await PdfOrdineApi.generate(_ordine!,_adminValues,_puntoVendita!);
+    PdfApi.openFile(pdfFile);
+  }
 }

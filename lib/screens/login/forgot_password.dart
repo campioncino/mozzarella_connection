@@ -28,13 +28,10 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
       FocusScope.of(context).unfocus();
 
       final response = await Supabase.instance.client.auth.resetPasswordForEmail(_email,redirectTo:await authRedirectUri);
-      // if (response.error != null) {
-      //   showMessage('Recupero password fallito: ${response.error!.message}');
-      //   _btnController.reset();
-      // } else {
-      //   showMessage('Per favore controlla la tua mail per le istruzioni');
-      //   _btnController.success();
-      // }
+
+        showMessage('Per favore controlla la tua mail per le istruzioni');
+        _btnController.success();
+
     }
   }
 
@@ -67,6 +64,7 @@ class _ForgotPasswordState extends State<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 35.0),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.green,
                 controller: _btnController,
                 onPressed: () {

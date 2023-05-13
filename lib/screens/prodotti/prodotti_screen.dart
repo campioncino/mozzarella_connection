@@ -1,37 +1,45 @@
+import 'package:bufalabuona/data/prodotti_rest_service.dart';
 import 'package:bufalabuona/data/utenti_rest_service.dart';
 import 'package:bufalabuona/model/categoria.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/screens/prodotti/prodotti_crud.dart';
 import 'package:bufalabuona/screens/punti_vendita/punti_vendita_crud.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/punti_vendita_rest_service.dart';
+import '../../main.dart';
+import '../../model/prodotto.dart';
 
 
-class PuntiVenditaScreen extends StatefulWidget {
-  const PuntiVenditaScreen({Key? key}) : super(key: key);
+class ProdottiScreen extends StatefulWidget {
+  const ProdottiScreen({Key? key}) : super(key: key);
 
   @override
-  State<PuntiVenditaScreen> createState() => _PuntiVenditaScreenState();
+  State<ProdottiScreen> createState() => _ProdottiScreenState();
 }
 
-class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
-  List<PuntoVendita>? puntiVenditaList;
+class _ProdottiScreenState extends State<ProdottiScreen> {
+  List<Prodotto>? puntiVenditaList;
   Categoria? _cat;
   bool _isLoading = true;
+  String imageUrl='https://stiyidpiphnxmmtmfutn.supabase.co/storage/v1/object/public/public-images/no_picture.png';
 
   final GlobalKey<ScaffoldState> _refreshKey = GlobalKey<ScaffoldState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   final TextEditingController _searchController = new TextEditingController();
 
-  List<PuntoVendita>? _values ;
-  List<PuntoVendita> _filteredValues = [];
+  List<Prodotto>? _values ;
+  List<Prodotto> _filteredValues = [];
 
-  _PuntiVenditaScreenState() {
+  _ProdottiScreenState() {
     _searchController.addListener(() {
       handleSearch(_searchController.text);
     });
@@ -44,9 +52,9 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
         print(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
-        List<PuntoVendita> list = _values!.where((v) {
+        List<Prodotto> list = _values!.where((v) {
           return v.denominazione!.contains(text.toUpperCase())
-              || v.idFatturazione!.contains(text.toUpperCase());
+              || v.descrizione!.contains(text.toUpperCase());
         }).toList();
         _filteredValues.clear();
         _filteredValues.addAll(list);
@@ -54,11 +62,12 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
     });
   }
 
-  readData() async {
-    WSResponse resp = await PuntiVenditaRestService.internal(context).getAll();
-    if(resp.success!){
+  Future<void> readData() async {
+    _filteredValues.clear();
+    WSResponse resp = await ProdottiRestService.internal(context).getAll();
+    if(resp.success!= null && resp.success!){
       setState((){
-        _values = PuntiVenditaRestService.internal(context).parseList(resp.data!.toList());
+        _values = ProdottiRestService.internal(context).parseList(resp.data!.toList());
         _filteredValues.addAll(_values!);
       });
     }
@@ -66,6 +75,7 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
       debugPrint("errore!!");
     }
   }
+
 
 
   List<Categoria> parseList(List responseBody) {
@@ -85,7 +95,7 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
   }
 
   void init() async{
-    // await readPuntiVendita();
+    // await readProdotti();
     await readData();
     setState(() {
       _isLoading=false;
@@ -157,7 +167,7 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,FontAwesomeIcons.shopSlash);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -169,7 +179,10 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
   }
 
 
-  Widget _buildChildRow(BuildContext context, PuntoVendita puntoVendita, int position){
+
+
+
+  Widget _buildChildRow(BuildContext context, Prodotto prodotto, int position){
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -181,27 +194,32 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
                 margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
                 elevation: 1.0,
                 child: InkWell(
-                  onTap: ()=> _goToEdit(puntoVendita),
+                  onTap: ()=> _goToEdit(prodotto),
                   child: Container(
-                    foregroundDecoration:(puntoVendita.dtFinVal!=null) ? const RotatedCornerDecoration(
-                      color: Colors.red,
-                      geometry: const BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
-                      // textSpan: const TextSpan(
-                      //   text: 'NON\nATTIVO',
-                      //   style: TextStyle(fontSize: 11,color: Colors.white),
-                      // ),
-                    ) : null,
+                    foregroundDecoration:(prodotto.dtFinVal!=null) ?
+                    // const RotatedCornerDecoration(
+                    //   color: Colors.red,
+                    //   geometry: const BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
+                    //   // textSpan: const TextSpan(
+                    //   //   text: 'NON\nATTIVO',
+                    //   //   style: TextStyle(fontSize: 11,color: Colors.white),
+                    //   // ),
+                    // )
+                    const RotatedCornerDecoration.withColor(color: Colors.red,  badgeSize: Size(34, 34),
+                        badgeCornerRadius: Radius.circular(8),
+                        badgePosition: BadgePosition.topEnd)
+                        : null,
                     width: double.infinity,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(prodotto.denominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                          Text(prodotto.descrizione?? ''),
+                          Text(prodotto.codice!),
                           SizedBox(height: 15,),
-                          // Text(utentiList![index].toJson().toString()),
-                          Text(puntoVendita.denominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                          Text(puntoVendita.indirizzo!),
-                          Text(puntoVendita.idFatturazione!),
+                          Text("${prodotto.quantita} ${prodotto.unimisCodice}"),
                           //TODO inserire dettaglio tipologia punto vendita (market, risto)
                         ],
                       ),
@@ -217,32 +235,33 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
   }
 
 
-  void _goToEdit(PuntoVendita data){
+  void _goToEdit(Prodotto data){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new PuntiVenditaCrud(puntoVendita: data))).then((value) => _refresh());
+        new ProdottiCrud(prodotto: data))).then((value) => _refresh());
   }
 
   void _goToInsert(){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new PuntiVenditaCrud(puntoVendita: null ))).then((value) => _refresh());
+        new ProdottiCrud(prodotto: null ))).then((value) => _refresh());
   }
 
 
-  Future<void> _refresh() async{
-    // Fluttertoast.showToast(
-    //     msg: "Refresh",
-    //     toastLength: Toast.LENGTH_LONG,
-    //     gravity: ToastGravity.CENTER,
-    //     timeInSecForIosWeb: 3,
-    //     backgroundColor: Colors.bl[200],
-    //     fontSize: 16.0
-    // );
-    _filteredValues.clear();
+  Future<void> _refresh() async {
+    Fluttertoast.showToast(
+        msg: "Refresh",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 3,
+        backgroundColor: Colors.redAccent,
+        fontSize: 16.0
+    );
     _values!.clear();
-    readData();
-
+     readData();
+    setState(() {
+      _isLoading=false;
+    });
   }
 
   Widget _buildSearchBar(BuildContext context) {
@@ -252,7 +271,7 @@ class _PuntiVenditaScreenState extends State<PuntiVenditaScreen> {
       controller: _searchController,
       decoration: InputDecoration(
           border: InputBorder.none,
-          hintText:"Cerca per Nome o Email",
+          hintText:"Cerca per Nome",
           suffixIcon: IconButton(
               icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
     );

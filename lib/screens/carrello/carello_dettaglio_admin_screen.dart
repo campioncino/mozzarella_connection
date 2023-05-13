@@ -1,39 +1,51 @@
-import 'dart:convert';
-
 import 'package:bufalabuona/data/cart_item_rest_service.dart';
-import 'package:bufalabuona/data/ordini_rest_service.dart';
-import 'package:bufalabuona/data/stato_ordine_rest_service.dart';
-import 'package:bufalabuona/model/cart_item.dart';
+import 'package:bufalabuona/data/listini_rest_service.dart';
+import 'package:bufalabuona/data/punti_vendita_rest_service.dart';
 import 'package:bufalabuona/model/cart_item_ext.dart';
+import 'package:bufalabuona/model/listino.dart';
 import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/screens/carrello/carello_checkout_admin_screen.dart';
+import 'package:bufalabuona/screens/listini_prodotti/listini_prodotti_screen.dart';
+// import 'package:bufalabuona/screens/prodotti/lov_prodotti_fragment.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:rounded_loading_button/rounded_loading_button.dart';
 
-class CarrelloDettaglioScreen extends StatefulWidget {
+class CarrelloDettaglioAdminScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
   final Ordine? ordine;
-  const CarrelloDettaglioScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
+  const CarrelloDettaglioAdminScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
 
   @override
-  State<CarrelloDettaglioScreen> createState() => _CarrelloDettaglioScreenState();
+  State<CarrelloDettaglioAdminScreen> createState() => _CarrelloDettaglioAdminScreenState();
 }
 
-class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
-  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+enum TipoPagamento { fattura, ricevuta }
 
+class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScreen> {
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+  final dateFormatter = new DateFormat('dd-MM-yyyy');
   PuntoVendita? _puntoVendita;
   Ordine? _ordine;
-
+  Listino? _listino;
   List<CartItemExt> _values =[];
-  List<CartItemExt> _filteredValues = [];
+  List<CartItemExt> _adminValues=[];
+  // List<CartItemExt> _filteredValues = [];
   bool _isLoading=true;
-  bool? _sendOrder = false;
-   Map<ListinoProdottiExt,int> _listCart = Map();
+  bool _isReadOnly = true;
+  Map<ListinoProdottiExt,int> _listCart = Map();
+
+  final TextEditingController _dataSpedizioneController = new TextEditingController();
+  final TextEditingController _noteController = new TextEditingController();
+
+  final RoundedLoadingButtonController _submitController = RoundedLoadingButtonController();
+
 
   @override
   void initState() {
@@ -41,15 +53,33 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
     super.initState();
     _ordine=this.widget.ordine;
     _puntoVendita=this.widget.puntoVendita;
-    _filteredValues.clear();
+    // _filteredValues.clear();
+    _isReadOnly =_ordine!.statoCodice=='INVIATO' ? false : true;
     init();
   }
 
   void init() async {
     await readData();
+    await loadPuntoVendita();
+    await loadListino();
     setState(() {
       _isLoading=false;
+      _dataSpedizioneController.text = dateFormatter.format(_ordine!.dtConsegna!);
+      _noteController.text=_ordine!.note??'Non sono state inserite note per la consegna';
     });
+  }
+
+  loadPuntoVendita() async{
+    _puntoVendita =await PuntiVenditaRestService.internal(context).getPuntoVendita(_ordine!.pvenditaId!);
+  }
+
+  loadListino() async{
+    WSResponse resp = await ListiniRestService.internal(context).getListinoByCatId(_puntoVendita!.catId!);
+    if(resp.success!= null && resp.success!){
+      setState(() {
+        _listino=ListiniRestService.internal(context).parseList(resp.data!.toList()).first;
+      });
+    }
   }
 
   readData() async{
@@ -58,7 +88,8 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       if(resp.success!= null && resp.success!){
         setState((){
           _values = CartItemRestService.internal(context).parseListExt(resp.data!.toList());
-          _filteredValues.addAll(_values!);
+          // _filteredValues.addAll(_values);
+          _adminValues.addAll(_values);
         });
       }
       else{
@@ -78,17 +109,14 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       key: _scaffoldKey,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Carrello'),
+          title: Text('Dettaglio Ordine'),
         ),
         resizeToAvoidBottomInset: false,
         body: WillPopScope(
             onWillPop: backPressed,
             child: stackWidget()),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    floatingActionButton :FloatingActionButton.extended(onPressed: _submit,
-      label:  Text("Conferma",style: TextStyle(fontSize: 22,)),
-    isExtended: true,backgroundColor:
-    Colors.amberAccent,)
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: checkoutButton(),
       ),
     );
   }
@@ -113,28 +141,33 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
   Widget body() {
     return Expanded(child: Column(
       mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if(_puntoVendita!=null)puntovenditaCard(),
-        Flexible(child: _createList(context)),
         Padding(
           padding: const EdgeInsets.only(bottom: 10.0),
           child: Container(
             color: Colors.white,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.max,
               children: [
-                Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.green,fontWeight: FontWeight.bold),)
+                ordineCard(),
+                destinatario(),
+                if(!_isReadOnly)
+                TextButton.icon(
+                  onPressed: ()=>aggiungiProdotto(),
+                  label: Text("AGGIUNGI PRODOTTO"),
+                  icon: Icon(Icons.add, size: 20),
+                ),
               ],
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 118.0),
-          child:Container(height: 0,)
-          // MaterialButton(onPressed: (){},child: Text("Salva carrello",style: TextStyle(color:Colors.blueAccent),),),
-        )
+
+        Flexible(child: _createList(context)),
+        SizedBox(height: 100,)
       ],
     ));
   }
@@ -143,22 +176,24 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
     if (_isLoading) {
       return AppUtils.loader(context);
     }
-    if (this._values.isEmpty) {
+    if (this._adminValues.isEmpty) {
       return AppUtils.emptyList(context,FontAwesomeIcons.slash);
     }
     var list = ListView.builder(
-        itemCount: _values.length,
+        itemCount: _adminValues.length,
         itemBuilder: (context, position) {
-          return _buildChildRow(context, _values[position], position);
+          return _buildChildRow(context, _adminValues[position], position);
         });
 
     return RefreshIndicator(child: list, onRefresh: _refresh,strokeWidth: 3,);
   }
 
   Future<void> _refresh() async{
-    _filteredValues.clear();
-    _values!.clear();
-    readData();
+    // _filteredValues.clear();
+    _values.clear();
+    _adminValues.clear();
+    await readData();
+    await loadPuntoVendita();
   }
 
   Widget _buildChildRow(BuildContext context, CartItemExt listini, int position){
@@ -187,30 +222,52 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
                                   Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
                                   Text(listini.prodDescrizione ?? ''),
                                   Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
-                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 22,color: Colors.green),),
-                                  Text("${listini.status??''}"),
+                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16,color: Colors.black87,fontWeight: FontWeight.w700),),
+                                  Text("${listini.statoCodice??''}"),
                                 ],
                               ),
                         ),
-                          // Row(
-                          //   mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-                          //   crossAxisAlignment: CrossAxisAlignment.center,
-                          //   children: [
-                          //     IconButton(icon: Container(
-                          //         decoration: BoxDecoration(
-                          //             borderRadius: BorderRadius.circular(100),
-                          //             border: Border.all(width: 2, color: Colors.green)),
-                          //         child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
-                          //     SizedBox(width: 10,),
-                          //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
-                          //     SizedBox(width: 10,),
-                          //     IconButton(icon: Container(
-                          //         decoration: BoxDecoration(
-                          //             borderRadius: BorderRadius.circular(100),
-                          //             border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.green,)),onPressed: ()=>addElementToList(listini),)
-                          //
-                          //   ],
-                          // ),
+                          Column(
+                            mainAxisAlignment:MainAxisAlignment.spaceBetween ,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              IconButton(icon: Container(
+                                  decoration: BoxDecoration(
+                                      color: _isReadOnly ? Colors.grey :Colors.white,
+                                      borderRadius: BorderRadius.circular(50),
+                                      border: Border.all(width: 4, color: _isReadOnly ? Colors.grey :Colors.white)),
+                                  child: (listini.quantita!=null && listini.quantita!>1) ? Icon(FontAwesomeIcons.minus,size: 20,color: _isReadOnly ? Colors.white70 :Colors.black54):Icon(FontAwesomeIcons.trash, size: 22, color: _isReadOnly ? Colors.white70 : Colors.red,)),
+                                    onPressed:  _isReadOnly ? null : (){setState(() {
+                                    if(listini.quantita!>0){listini.quantita = listini.quantita!-1;}
+                                  });}),
+                              SizedBox(width: 10,),
+                              Text(listini.quantita.toString() ,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w700),),
+                              SizedBox(width: 10,),
+                              IconButton(
+                                icon: Container(
+                                    decoration: BoxDecoration(
+                                        color: _isReadOnly ? Colors.grey :Colors.teal[800],
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        border: Border.all(
+                                            width: 5,
+                                            color:  _isReadOnly ? Colors.grey :Colors.teal[800]!,)),
+                                    child: Icon(
+                                      FontAwesomeIcons.plus,
+                                      size: 20,
+                                      color: Colors.white70,
+                                    )),
+                                onPressed: _isReadOnly ? null : () {
+                                  setState(() {
+                                    if (listini.quantita != null) {
+                                      listini.quantita = listini.quantita! + 1;
+                                      _calcolaTotaleOrdine();
+                                    }
+                                  });
+                                },
+                              )
+                            ],
+                          )
                         ],
                       ),
                     ),
@@ -225,18 +282,35 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
   }
 
 
-  Widget puntovenditaCard(){
-    return Container(
-      color: Colors.teal[50],
-      width: MediaQuery.of(context).size.width,
-      child: ListTile(leading: Icon(FontAwesomeIcons.locationDot,color: Colors.black54),
-        title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-        trailing: IconButton(icon: Icon(FontAwesomeIcons.pencil),onPressed: (){},),
-      ),
-    );
+  Widget destinatario(){
+    return Container(child: Card(
+      child: Column(children: [
+        puntoVenditaCard(),
+      ],),
+    ),);
   }
 
-    Future<bool> backPressed() async {
+  Widget puntoVenditaCard(){
+    return ListTile(
+        leading: Icon(FontAwesomeIcons.house),
+    title:Text("${_puntoVendita!.denominazione}"),
+        subtitle: Text("${_puntoVendita!.ragSociale}"));
+
+  }
+
+  Widget ordineCard(){
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+        Text("Ordine #${_ordine!.numero}",style: TextStyle(fontWeight: FontWeight.w600),),
+        Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
+      ],),
+    );}
+
+  Future<bool> backPressed() async {
       Navigator.pop(context, this._listCart);
       return true;
     }
@@ -249,119 +323,90 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
     return isPresent;
   }
 
-  addElementToList(ListinoProdottiExt item){
-    if(checkElementInCart(item)){
-      int val = _listCart[item]!;
-      val++;
+  addElementToList(CartItemExt item){
       setState(() {
-        _listCart[item]=val;
+        item.quantita!+1;
       });
-    }
   }
 
-  removeElementToList(ListinoProdottiExt item){
-    if(checkElementInCart(item)){
-      int val = _listCart[item]!;
-      val--;
-      setState(() {
-        if(val>0){
-          _listCart[item]=val;
-
-          // _values.remove(item);
-          // _filteredValues.remove(item);
-        }else{
-          _listCart[item]=0;}
-      });
-    }
+  removeElementToList(CartItemExt item){
+      if(item.quantita!>0){
+        setState(() {
+          item.quantita!-1;
+        });
+      }
   }
 
   String _calcolaTotaleOrdine(){
      num total=0;
-    _values.forEach((value) {
+    _adminValues.forEach((value) {
       var price= value.price! * value.quantita!;
       total+=price;
     });
     return total.toString();
   }
 
-   _submit() async {
-    ///TODO QUA DOVREMMO
-    //  _sendOrder = await askContinua(context);
-    //  if(_sendOrder!){
-    //    setState(() {
-    //      _isLoading=true;
-    //    });
-    //
-    //  await _createOrderAndRegisterCartItems();
-    //  }
-    // setState(() {
-    //   _isLoading=false;
-    // });
-    // debugPrint("delayed end");
-
-  }
-
-  _createOrderAndRegisterCartItems() async {
-    Ordine ordine = new Ordine();
-    ordine.indirizzoConsegna = _puntoVendita!.indirizzo!;
-    ordine.total = num.parse(_calcolaTotaleOrdine());
-    ordine.utenteId = AppUtils.utente.profileId!;
-    ordine.statoCodice = "INVIATO";
-    ordine.pvenditaId = _puntoVendita!.id;
-    ordine.note = "note ordine";
-
-
-    WSResponse  resp = await OrdiniRestService.internal(context).upsertOrdine(ordine);
-
-    if(resp.success!=null && resp.success! && _listCart.length>0) {
-      Ordine ordineInviato = OrdiniRestService
-          .internal(context)
-          .parseList(resp.data!.toList())
-          .first;
-      List<CartItem> listCartItems = [];
-      _listCart.forEach((key, value) {
-        if (value > 0) {
-          CartItem tmp = new CartItem();
-          tmp.orderId = ordineInviato.id;
-          tmp.prodId = key.sku;
-          tmp.quantita = value;
-          tmp.note = "inviato dal cliente";
-          listCartItems.add(tmp);
+  aggiungiProdotto() async{
+    List<ListinoProdottiExt> list=[];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => ListiniProdottiScreen(listino: _listino,lovMode: true,))
+    ).then((value){
+      if(value!=null){
+        ListinoProdottiExt lp = value as ListinoProdottiExt;
+        CartItemExt cartItemTmp = CartItemExt.fromJson(lp.toJson());
+        cartItemTmp.quantita=1;
+        cartItemTmp.note='Inserito dal Venditore';
+        cartItemTmp.statoCodice='PROPOSTO';
+        debugPrint(cartItemTmp.toJson().toString());
+        bool _isPresent =  _adminValues.any((element) => element.prodId==cartItemTmp.prodId ?? false);
+        if(!_isPresent) {
+          setState(() {
+            _adminValues.add(cartItemTmp);
+            _calcolaTotaleOrdine();
+          });
+        }else{
+          AppUtils.errorSnackBar(_scaffoldKey, "Prodotto già presente nel carrello");
         }
-      });
-
-
-      WSResponse respCart = await CartItemRestService.internal(context)
-          .upsertMultipleCartItem(listCartItems);
-      if(respCart.success!=null && respCart.success!){
-        debugPrint("abbiamo creato ordine e carrello");
       }
-    }
+    });
+
   }
 
-  Future<bool?> askContinua(BuildContext context) async {
-    String title = "Attenzione";
-    String message ="Vuoi effettuare l'ordine dei prodotti presenti nel carrello?";
-    bool? ok = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-          title: Text(title,style: TextStyle(fontWeight: FontWeight.bold),),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-                child: Text("ANNuLLA"),
-                onPressed: () {
-                  Navigator.pop(context,false);
-                }),
-            TextButton(
-                child: Text("OK",style: TextStyle(fontSize: 22),),
-                onPressed: () {
-                  Navigator.pop(context,true);
-                }),
-            ]
+  Widget totaleOrdineCard(){
+    return Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),);
+  }
+
+  Widget checkoutButton(){
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: Row(
+        children: [
+          Text("Totale ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),),
+          SizedBox(width: 40,),
+          Expanded(
+            child: RoundedLoadingButton(onPressed: _submit,
+                borderRadius: 15,
+                color: Colors.amberAccent,
+                controller: _submitController,child: Text("Prosegui",style: TextStyle(fontSize: 22,color: Colors.black),)),
+          )
+        ],
       ),
     );
-    return ok!;
   }
+
+  _submit() async {
+    setState(() {
+      _submitController.reset();
+    });
+    // if(_listCart!=null && _listCart.isNotEmpty) {
+      Navigator.push(context, MaterialPageRoute(
+          builder: (context) =>
+          new CarrelloCheckoutAdminScreen(
+            puntoVendita: _puntoVendita, ordine: _ordine, adminValues: _adminValues, readOnlyMode: _isReadOnly,)));
+    // }
+
+  }
+
 }

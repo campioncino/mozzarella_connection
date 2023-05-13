@@ -2,58 +2,49 @@ import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'report_produzione.g.dart';
+part 'report_produzione_json_data.g.dart';
 
 @JsonSerializable(
   includeIfNull: false,
   explicitToJson: true,
 )
-class ReportProduzione extends WSResponse {
-  static const String TABLE_NAME = "report_produzione";
-  ReportProduzione();
+class ReportProduzioneJsonData {
+  ReportProduzioneJsonData();
 
-  factory ReportProduzione.fromJson(Map<String, dynamic> json) =>
-      _$ReportProduzioneFromJson(json);
+  factory ReportProduzioneJsonData.fromJson(Map<String, dynamic> json) =>
+      _$ReportProduzioneJsonDataFromJson(json);
 
-  Map<String, dynamic> toJson() => _$ReportProduzioneToJson(this);
-  @JsonKey(name: 'report_id')
-  int? reportId;
-  @JsonKey(name: 'created_at')
-  String? createdAt;
-  @JsonKey(
-      name: 'data_riferimento',
-      fromJson: AppUtils.stringToDatePostgres,
-      toJson: AppUtils.dateToString)
-  DateTime? dtRiferimento;
-  @JsonKey(name: 'products_data')
-  String? productsData;
-  String? hash;
-  String? note;
-  int? index;
+  Map<String, dynamic> toJson() => _$ReportProduzioneJsonDataToJson(this);
+  @JsonKey(name: 'prod_id')
+  int? prodId;
+  String? descrizione;
+  String? denominazione;
+  @JsonKey(name: 'sum_to_deliver')
+  int? sumToDeliver;
+  @JsonKey(name: 'unimis_codice')
+  String? unimisCodice;
+  String? codice;
 
 
   @override
-  ReportProduzione.fromDBMap(Map map) {
-    this.reportId = map['report_id'];
-    this.createdAt = map['created_at'];
-    this.dtRiferimento = map['data_riferimento'];
-    this.productsData = map['products_data'];
-    this.hash = map['hash'];
-    this.note = map['note'];
-    this.index = map['index'];
+  ReportProduzioneJsonData.fromDBMap(Map map) {
+    this.prodId = map['prod_id'];
+    this.descrizione = map['descrizione'];
+    this.denominazione = map['descrizione'];
+    this.sumToDeliver = map['sum_to_deliver'];
+    this.codice = map['codice'];
+
   }
 
   Map<String, dynamic> tableMap() {
     var map = new Map<String, dynamic>();
-    if (this.reportId != null) {
-      map['report_id'] = this.reportId;
+    if (this.prodId != null) {
+      map['prod_id'] = this.prodId;
     }
-    map['created_at']=this.createdAt ;
-    map['data_riferimento']=this.dtRiferimento.toString() ;
-    map['products_data'] = this.productsData;
-    map['hash']=this.hash;
-    map['note'] = this.note;
-    map['index'] = this.index;
+    map['sum_to_deliver']=this.sumToDeliver ;
+    map['descrizione']=this.descrizione;
+    map['denominazione'] = this.denominazione;
+    map['codice']=this.codice;
     return map;
   }
 }

@@ -1,4 +1,5 @@
 
+import 'package:bufalabuona/model/categoria_prodotto.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
@@ -7,23 +8,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../model/categoria.dart';
 import '../model/listino.dart';
 
-class ListiniRestService {
+class CategorieProdottiRestService {
   BuildContext context;
 
-  static ListiniRestService? _instance;
+  static CategorieProdottiRestService? _instance;
 
-  factory ListiniRestService(context) =>
-      _instance ?? ListiniRestService.internal(context);
+  factory CategorieProdottiRestService(context) =>
+      _instance ?? CategorieProdottiRestService.internal(context);
 
-  ListiniRestService.internal(this.context);
+  CategorieProdottiRestService.internal(this.context);
 
   Future<WSResponse> getAll() async{
     WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(CategoriaProdotto.TABLE_NAME)
           .select()
-      // .order('prod_id', ascending: true)
           ;
       if(response!=null) {
         result = AppUtils.parseWSResponse(response);
@@ -37,26 +37,22 @@ class ListiniRestService {
     return result;
   }
 
-  List<Listino> parseList(List responseBody) {
-    List<Listino> list = responseBody
-        .map<Listino>((f) => Listino.fromJson(f))
+  List<CategoriaProdotto> parseList(List responseBody) {
+    List<CategoriaProdotto> list = responseBody
+        .map<CategoriaProdotto>((f) => CategoriaProdotto.fromJson(f))
         .toList();
-    //ordiniamoli dal più recente al più vecchio
-    // list.sort((a, b) => b.presId!.compareTo(a.presId!));
     return list;
   }
 
-  Future<Listino?> getListino(int id) async{
+  Future<CategoriaProdotto?> getCategoriaProdotto(int id) async{
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(CategoriaProdotto.TABLE_NAME)
           .select()
-          .eq('id',id)
-      // .order('prod_id', ascending: true)
-          ;
+          .eq('id',id)       ;
 
       if(response!=null){
-        return Listino.fromJson(response);
+        return CategoriaProdotto.fromJson(response);
       }
     }catch(e){
       debugPrint("error :${e.toString()}");
@@ -65,11 +61,11 @@ class ListiniRestService {
     }
   }
 
-  Future<WSResponse> getListinoByCatId(int id) async{
+  Future<WSResponse> getCategoriaProdottoByCatId(int id) async{
     WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(CategoriaProdotto.TABLE_NAME)
           .select()
           .eq('cat_id',id)
           ;
@@ -87,22 +83,16 @@ class ListiniRestService {
     return result;
   }
 
-    Future<WSResponse> upsertListino(Listino item) async{
+    Future<WSResponse> upsertCategoriaProdotto(CategoriaProdotto item) async{
       WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(CategoriaProdotto.TABLE_NAME)
           .upsert(AppUtils.removeNull(item.tableMap()))
           ;
       if(response!=null) {
         result = AppUtils.parseWSResponse(response);
       }
-      // else if(response.error!=null){
-      //   WSErrorResponse err = new WSErrorResponse();
-      //   err.message=response.error!.message ?? 'errore non gestito';
-      //   result.errors ??= [];
-      //   result.errors!.add(err);
-      // }
     }catch(e){
       WSErrorResponse err = new WSErrorResponse();
       err.message=e.toString();

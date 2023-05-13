@@ -34,6 +34,11 @@ class _SignUpState extends State<SignUpScreen> {
 
       final response = await Supabase.instance.client.auth.signUp(emailRedirectTo: await authRedirectUri,
          email: _email, password: _password);
+      if(response.user!=null){
+        showMessage(
+                "Per favore controlla la mail e segui le istruzioni per verificare il tuo indirizzo");
+            _btnController.success();
+      }
       // if (response.error != null) {
       //   showMessage('Registrazione Fallita: ${response.error!.message}');
       //   _btnController.reset();
@@ -59,14 +64,15 @@ class _SignUpState extends State<SignUpScreen> {
     };
     final response = await Supabase.instance.client
         .from('profiles')
-        .upsert(updates)
+        .upsert(updates).select()
         ;
-    if (response.error != null) {
+    if (response == null) {
       throw "Update profile failed: ${response.error!.message}";
     }else{
+      Map<String,dynamic> options = {'user':user};
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/profile',
+      '/profile',arguments: options,
           (route) => false,
     );}
   }
@@ -134,6 +140,7 @@ class _SignUpState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 35.0),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.green,
                 controller: _btnController,
                 onPressed: () {

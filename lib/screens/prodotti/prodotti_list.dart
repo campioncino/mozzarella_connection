@@ -22,7 +22,7 @@ class _ProdottiListState extends State<ProdottiList> {
         .from('prodotti')
         .select()
         .order('prod_id', ascending: true)
-        .execute();
+        ;
     setState(() {
       if(response.data!=null){
       dashList = response.data.toList();}
@@ -52,27 +52,10 @@ class _ProdottiListState extends State<ProdottiList> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Text(
-                            (dashList![index]["descrizione"]).toString()),
+                            (dashList![index]["denominazione"]).toString()),
                       ),
                     ),
                   ),
-                  // Padding(
-                  //   padding: const EdgeInsets.only(
-                  //     left: 16,
-                  //     top: 4,
-                  //     right: 16,
-                  //   ),
-                  //   child: Container(
-                  //     decoration: BoxDecoration(
-                  //         borderRadius: BorderRadius.circular(20.00),
-                  //         border: Border.all(color: Colors.blue, width: 1)),
-                  //     child: CachedNetworkImage(
-                  //       imageUrl: dashList![index]["dash_image"],
-                  //       height: 118.00,
-                  //       width: 118.00,
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               );
             })

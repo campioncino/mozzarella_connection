@@ -1,59 +1,116 @@
+import 'dart:async';
+import 'dart:isolate';
+
+import 'package:bufalabuona/app_config.dart';
+import 'package:bufalabuona/app_launcher.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:supa_auth_flutter/screens/auth-flow/forgot_password.dart';
-import 'package:supa_auth_flutter/screens/auth-flow/sign_in.dart';
-import 'package:supa_auth_flutter/screens/auth-flow/sign_up.dart';
-import 'package:supa_auth_flutter/screens/home.dart';
-import 'package:supa_auth_flutter/screens/auth-flow/verifications_alert.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_strategy/url_strategy.dart';
 
-import 'screens/auth-flow/magic_link_auth.dart';
-import 'screens/auth-flow/phone_auth.dart';
+import 'configure_nonweb.dart' if (dart.library.html) 'configure_web.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'],
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'],
-    authCallbackUrlHostname: 'http://localhost:53463/home',
-  );
-  setPathUrlStrategy();
-  runApp(
-    const MyApp(),
-  );
-}
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Supa Auth Flutter',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.teal,
-        textTheme: GoogleFonts.nunitoTextTheme(
-          Theme.of(context).textTheme,
-        ),
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+
+  if(kIsWeb){
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyDy9koGQ4-Oxq5oiaZyLBN3bHgJDNi0_Z4",
+          authDomain: "mozzarella-connection-a8589.firebaseapp.com",
+          projectId: "mozzarella-connection-a8589",
+          storageBucket: "mozzarella-connection-a8589.appspot.com",
+          messagingSenderId: "675275977106",
+          appId: "1:675275977106:web:64cb27a4a7f42fcc3b514b",
+          measurementId: "G-M99EMQ5ZFC"
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SignIn(),
-        '/sign-up': (context) => const SignUp(),
-        '/forgot-password': (context) => const ForgotPassword(),
-        '/magic-link': (context) => const MagicLinkAuth(),
-        '/phone-auth': (context) => const PhoneAuth(),
-        '/verification': (context) => const VerificationsAlertUI(),
-        '/home': (context) => const Home(),
-      },
     );
-  }
+  }else{
+  await Firebase.initializeApp();}
+  debugPrint("Handling a background message: ${message.messageId}\nbackground message ${message.notification!.body}");
 }
 
-// http://localhost:53463/#/ 
-// flutter run -d chrome --web-port=53463
+
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await dotenv.load(fileName: ".env");
+
+  await Supabase.initialize(url:  dotenv.env['SUPABASE_URL']!, anonKey: dotenv.env['SUPABASE_ANON_KEY']!);  /// Initialize Crash report
+
+  if (!kIsWeb) {
+    if (kDebugMode) {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+    } else {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+    }
+  }
+  // await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+
+  // await configureApp();
+  var configuredApp = new AppConfig(
+    child: new AppLauncher(),
+  );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  /// Pass all uncaught errors from the framework to Crashlytics.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+if(!kIsWeb) {
+  // Errors outside of Flutter
+  Isolate.current.addErrorListener(RawReceivePort((List<dynamic> pair) async {
+    final List<dynamic> errorAndStacktrace = pair;
+    await FirebaseCrashlytics.instance.recordError(
+      errorAndStacktrace.first,
+      errorAndStacktrace.last as StackTrace,
+    );
+  }).sendPort);
+}
+
+
+  runZonedGuarded(() {
+    // if(!kIsWeb){
+    runApp(ProviderScope(child: configuredApp));
+  // }
+
+  }, FirebaseCrashlytics.instance.recordError);
+}
+
+final supabase = Supabase.instance.client;
+
+bool isAuthenticated() {
+  return supabase.auth.currentUser != null;
+}
+
+bool isUnauthenticated() {
+  return isAuthenticated() == false;
+}
+
+final themeColor = Color(0xFFbcdeea);
+
+
+Future<void> refreshSession() async {
+  if (isAuthenticated() && supabase.auth.currentSession != null) {
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+        supabase.auth.currentSession!.expiresAt! * 1000);
+    if (expiresAt
+        .isBefore(DateTime.now().subtract(const Duration(seconds: 2)))) {
+      await supabase.auth.refreshSession();
+    }
+  }
+
+}
+
+

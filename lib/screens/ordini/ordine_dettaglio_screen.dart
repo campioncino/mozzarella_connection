@@ -14,16 +14,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class CarrelloDettaglioScreen extends StatefulWidget {
+class OrdineDettaglioScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
   final Ordine? ordine;
-  const CarrelloDettaglioScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
+  const OrdineDettaglioScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
 
   @override
-  State<CarrelloDettaglioScreen> createState() => _CarrelloDettaglioScreenState();
+  State<OrdineDettaglioScreen> createState() => _OrdineDettaglioScreenState();
 }
 
-class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
+class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   PuntoVendita? _puntoVendita;
@@ -64,11 +64,6 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       else{
         debugPrint("errore!!");
       }
-      // setState(() {
-      //   _values.clear();
-      //   _values.addAll(_listCart.keys);
-      //   _filteredValues=_values;
-      // });
     }
   }
 
@@ -78,17 +73,17 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       key: _scaffoldKey,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Carrello'),
+          title: Text('Dettaglio Ordine'),
         ),
         resizeToAvoidBottomInset: false,
         body: WillPopScope(
             onWillPop: backPressed,
             child: stackWidget()),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    floatingActionButton :FloatingActionButton.extended(onPressed: _submit,
-      label:  Text("Conferma",style: TextStyle(fontSize: 22,)),
-    isExtended: true,backgroundColor:
-    Colors.amberAccent,)
+    //     floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    // floatingActionButton :FloatingActionButton.extended(onPressed: _submit,
+    //   label:  Text("Conferma",style: TextStyle(fontSize: 22,)),
+    // isExtended: true,backgroundColor:
+    // Colors.amberAccent,)
       ),
     );
   }
@@ -115,26 +110,10 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if(_puntoVendita!=null)puntovenditaCard(),
+        if(_puntoVendita!=null)riepilogoOrdineCard(),
+        totaleOrdineCard(),
         Flexible(child: _createList(context)),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10.0),
-          child: Container(
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.green,fontWeight: FontWeight.bold),)
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 118.0),
-          child:Container(height: 0,)
-          // MaterialButton(onPressed: (){},child: Text("Salva carrello",style: TextStyle(color:Colors.blueAccent),),),
-        )
+
       ],
     ));
   }
@@ -177,40 +156,23 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
                   child: Container(
                     width: double.infinity,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      padding: const EdgeInsets.fromLTRB( 15.0,10,15,10),
                       child: Row(
                         children: [
+                          Text(listini.quantita.toString(),style: TextStyle(fontSize: 30),),
+                          Text(" x ",style: TextStyle(fontSize: 18),),
+                        SizedBox(width: 20,),
                         Expanded(
                           child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
                                   Text(listini.prodDescrizione ?? ''),
-                                  Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
-                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 22,color: Colors.green),),
+                                  Text("${listini.price.toString()} € / ${listini.prodUnimisCodice}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16),),
                                   Text("${listini.status??''}"),
                                 ],
                               ),
                         ),
-                          // Row(
-                          //   mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-                          //   crossAxisAlignment: CrossAxisAlignment.center,
-                          //   children: [
-                          //     IconButton(icon: Container(
-                          //         decoration: BoxDecoration(
-                          //             borderRadius: BorderRadius.circular(100),
-                          //             border: Border.all(width: 2, color: Colors.green)),
-                          //         child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
-                          //     SizedBox(width: 10,),
-                          //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
-                          //     SizedBox(width: 10,),
-                          //     IconButton(icon: Container(
-                          //         decoration: BoxDecoration(
-                          //             borderRadius: BorderRadius.circular(100),
-                          //             border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.green,)),onPressed: ()=>addElementToList(listini),)
-                          //
-                          //   ],
-                          // ),
                         ],
                       ),
                     ),
@@ -218,23 +180,56 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 24,color: Colors.green,fontWeight: FontWeight.w700) ,),
+            ),
           ],
         ),
       ],
     );
   }
 
+  String _calcolaParzialeOrdine(CartItemExt listino){
 
-  Widget puntovenditaCard(){
+   return (listino.quantita! * listino.price!).toString();
+
+  }
+
+  Widget riepilogoOrdineCard(){
     return Container(
-      color: Colors.teal[50],
-      width: MediaQuery.of(context).size.width,
-      child: ListTile(leading: Icon(FontAwesomeIcons.locationDot,color: Colors.black54),
-        title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-        trailing: IconButton(icon: Icon(FontAwesomeIcons.pencil),onPressed: (){},),
-      ),
+        color: Colors.teal[50],
+        width: MediaQuery.of(context).size.width,
+        child: Padding(
+          padding: const EdgeInsets.all(18.0),
+          child:  Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Data ordine: ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt??'').substring(0,10) ??'' }",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 14),),
+              Text("Numero ordine #: ${_ordine!.numero }",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 14),),
+              Text("Stato Ordine : ${_ordine!.statoCodice}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 14),),
+              Text("Indirizzo consegna : ${_ordine!.indirizzoConsegna ?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 14),),
+            ],
+          ),
+        )
+
     );
   }
+
+  Widget totaleOrdineCard(){
+    return Container(
+      // color: Colors.teal[50],
+      width: MediaQuery.of(context).size.width,
+      child: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.red[900],fontWeight: FontWeight.bold),),
+      )
+
+    );
+  }
+
+
 
     Future<bool> backPressed() async {
       Navigator.pop(context, this._listCart);

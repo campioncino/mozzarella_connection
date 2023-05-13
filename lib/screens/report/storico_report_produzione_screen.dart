@@ -1,33 +1,25 @@
-import 'package:bufalabuona/data/ordini_rest_service.dart';
-import 'package:bufalabuona/data/prodotti_rest_service.dart';
-import 'package:bufalabuona/data/utenti_rest_service.dart';
+import 'dart:convert';
+
 import 'package:bufalabuona/model/categoria.dart';
-import 'package:bufalabuona/model/ordine.dart';
-import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
-import 'package:bufalabuona/screens/carrello/carello_dettaglio_admin_screen.dart';
-import 'package:bufalabuona/screens/carrello/carello_dettaglio_screen.dart';
-import 'package:bufalabuona/screens/prodotti/prodotti_crud.dart';
-import 'package:bufalabuona/screens/punti_vendita/punti_vendita_crud.dart';
+import 'package:bufalabuona/screens/report/dettaglio_report_screen.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
-import '../../data/punti_vendita_rest_service.dart';
-import '../../model/ordine_ext.dart';
-import '../../model/prodotto.dart';
+import '../../data/report_produzione_rest_service.dart';
+import '../../model/report_produzione.dart';
 
 
-class StoricoOrdiniAdminScreen extends StatefulWidget {
-  const StoricoOrdiniAdminScreen({Key? key}) : super(key: key);
+class StoricoReportProduzioneScreen extends StatefulWidget {
+  const StoricoReportProduzioneScreen({Key? key}) : super(key: key);
 
   @override
-  State<StoricoOrdiniAdminScreen> createState() => _StoricoOrdiniAdminScreenState();
+  State<StoricoReportProduzioneScreen> createState() => _StoricoReportProduzioneScreenState();
 }
 
-class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
+class _StoricoReportProduzioneScreenState extends State<StoricoReportProduzioneScreen> {
   Categoria? _cat;
   bool _isLoading = true;
   bool _withConfermato = false;
@@ -39,10 +31,10 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
 
   final TextEditingController _searchController = new TextEditingController();
 
-  List<OrdineExt>? _values ;
-  List<OrdineExt> _filteredValues = [];
+  List<ReportProduzione>? _values ;
+  List<ReportProduzione> _filteredValues = [];
 
-  _StoricoOrdiniAdminScreenState() {
+  _StoricoReportProduzioneScreenState() {
     _searchController.addListener(() {
       handleSearch(_searchController.text);
     });
@@ -55,10 +47,11 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
         print(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
-        List<OrdineExt> list = _values!.where((v) {
-          return v.createdAt!.contains(text.toUpperCase())
-              || v.statoCodice!.contains(text.toUpperCase())
-              || v.pvenditaDenominazione!.toUpperCase().contains(text.toUpperCase());
+        List<ReportProduzione> list = _values!.where((v) {
+          return v.createdAt!.contains(text.toUpperCase()
+              // || v.statoCodice!.contains(text.toUpperCase())
+              // || v.pvenditaDenominazione!.toUpperCase().contains(text.toUpperCase()
+              );
         }).toList();
         _filteredValues.clear();
         _filteredValues.addAll(list);
@@ -68,10 +61,10 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
 
   Future<void> readData() async {
     _filteredValues.clear();
-    WSResponse resp = await OrdiniRestService.internal(context).getAllOrdini(_withConfermato);
+    WSResponse resp = await ReportProduzioneRestService.internal(context).getAllReportProduzione();
     if(resp.success!= null && resp.success!){
       setState((){
-        _values = OrdiniRestService.internal(context).parseListExt(resp.data!.toList());
+        _values = ReportProduzioneRestService.internal(context).parseList(resp.data!.toList());
         _filteredValues.addAll(_values!);
       });
     }
@@ -130,6 +123,9 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
     return  ScaffoldMessenger(
       key: _scaffoldKey,
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Storico Report Produzione'),
+        ),
           resizeToAvoidBottomInset: false,
           body: WillPopScope(
               onWillPop: null,
@@ -178,7 +174,6 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
     return Expanded(child: Column(
       children: [
         _buildSearchBar(context),
-        _includiConfermato(context),
         SizedBox(height: 20),
         Flexible(child: _createList(context)),
       ],
@@ -190,7 +185,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.shopSlash);
+      return AppUtils.emptyList(context,FontAwesomeIcons.boxArchive);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -205,7 +200,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
 
 
 
-  Widget _buildChildRow(BuildContext context, OrdineExt ordine, int position){
+  Widget _buildChildRow(BuildContext context, ReportProduzione report, int position){
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,22 +213,16 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
                 margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
                 elevation: 1.0,
                 child: InkWell(
-                  onTap: ()=> _goToDetail(ordine),
+                  onTap: ()=> _goToDetail(report),
                   child: ListTile(
                     trailing: Icon(Icons.chevron_right),
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("# ${ordine.numero} "),
-                        // Text(utentiList![index].toJson().toString()),
-
-
-                        // Text(utentiList![index].toJson().toString()),
-                        Text(ordine.pvenditaDenominazione??'',style: TextStyle(fontWeight: FontWeight.w800,fontSize: 16)),
-                        Text("Effettuato il : ${AppUtils.formPostgresStringDate(ordine.createdAt?.substring(0,10)?? '')}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                        Text("€ ${ordine.total}"),
-                        Text("Stato : ${ordine.statoCodice?? ''}",style: TextStyle(fontWeight: FontWeight.w600)),
-                        Text("Consegna per il : ${AppUtils.formPostgresStringDate(ordine.dtConsegna.toString().substring(0,10)?? '')}"),
+                        Text("Produzione per il giorno ${report.dtRiferimento.toString().substring(0,10)} ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                        Text("Report # ${report.index}"),
+                        Text("Creato il : ${AppUtils.convertTimestamptzToStringDate(report.createdAt??'')?.substring(0,10)?? ''}"),
+                        Text("note ${report.note}"),
                       ],
                     ),
                   ),
@@ -247,16 +236,15 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
   }
 
 
-  void _goToDetail(Ordine data){
-    Navigator.push(context,  MaterialPageRoute(
-        builder: (context) =>
-        new CarrelloDettaglioAdminScreen(ordine: data,puntoVendita: null,))).then((value) => _refresh());
+  void _goToDetail(ReportProduzione report){
+    List data =jsonDecode(report.productsData!);
+    Navigator.push(context, MaterialPageRoute(builder: (context)=> DettaglioReportScreen(data:data ,dtReport: report.dtRiferimento.toString().substring(0,10),isFromStorico: true,)));
   }
 
   void _goToInsert(){
     // Navigator.push(context,  MaterialPageRoute(
     //     builder: (context) =>
-    //     new ProdottiCrud(ordine: null ))).then((value) => _refresh());
+    //     new ProdottiCrud(report: null ))).then((value) => _refresh());
   }
 
 

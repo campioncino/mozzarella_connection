@@ -2,71 +2,62 @@ import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'ordine.g.dart';
+
+import 'ordine.dart';
+part 'ordine_ext.g.dart';
 
 @JsonSerializable(
   includeIfNull: false,
   explicitToJson: true,
 )
-class Ordine extends WSResponse {
-  static const String TABLE_NAME = "ordini";
-  Ordine();
+class OrdineExt extends Ordine {
+  static const String TABLE_NAME = "v_ordini";
+  OrdineExt();
 
-  factory Ordine.fromJson(Map<String, dynamic> json) =>
-      _$OrdineFromJson(json);
+  factory OrdineExt.fromJson(Map<String, dynamic> json) =>
+      _$OrdineExtFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrdineToJson(this);
+  Map<String, dynamic> toJson() => _$OrdineExtToJson(this);
 
-  int? id;
-  @JsonKey(name: 'utente_id')
-  String? utenteId;
-  @JsonKey(name: 'cart_id')
-  int? cartId;
-  @JsonKey(name: 'pvendita_id')
-  int? pvenditaId;
-  @JsonKey(name: 'stato_codice')
-  String? statoCodice;
-  @JsonKey(name: 'created_at')
-  String? createdAt;
-  @JsonKey(
-      name: 'data_consegna',
-      fromJson: AppUtils.stringToDatePostgres,
-      toJson: AppUtils.dateToString)
-  DateTime? dtConsegna;
-  @JsonKey(name: 'indirizzo_consegna')
-  String? indirizzoConsegna;
-  String? note;
-  num? total;
-  num? numero;
+  @JsonKey(name: 'utente_name')
+  String? utenteName;
 
-  @override
-  Ordine.fromDBMap(Map map) {
-    this.id = map['id'];
-    this.cartId = map['cart_id'];
-    this.pvenditaId = map['pvendita_id'];
-    this.utenteId = map['utente_id'];
-    this.statoCodice = map['stato_codice'];
-    this.dtConsegna = map['data_consegna'];
-    this.createdAt = map['created_at'];
-    this.total = map['total'];
-    this.indirizzoConsegna = map['indirizzo_consegna'];
-    this.note = map['note'];
-  }
+  @JsonKey(name: 'utente_email')
+  String? utenteEmail;
 
-  Map<String, dynamic> tableMap() {
-    var map = new Map<String, dynamic>();
-    if (this.id != null) {
-      map['id'] = this.id;
-    }
-    map['cart_id'] = this.cartId;
-    map['pvendita_id'] = this.pvenditaId;
-    map['utente_id']=this.utenteId;
-    map['stato_codice']=this.statoCodice ;
-    map['data_consegna']=this.dtConsegna.toString() ;
-    map['created_at']=this.createdAt ;
-    map['total']=this.total ;
-    map['indirizzo_consegna']=this.indirizzoConsegna;
-    map['note'] = this.note;
-    return map;
-  }
+  @JsonKey(name: 'utente_username')
+  String? utenteUsername;
+
+  @JsonKey(name: 'utente_phone_number')
+  String? utentePhoneNumber;
+
+  @JsonKey(name: 'pvendita_denominazione')
+  String? pvenditaDenominazione;
+
+  @JsonKey(name: 'pvendita_categoria')
+  String? pvenditaCatDescrizione;
+
+  @JsonKey(name: 'tipo_fiscale_descrizione')
+  String? tipoFiscaleDescrizione;
+
+  // @override
+  // OrdineExt.fromDBMap(Map map) {
+  //   this.utenteName = map['utente_name'];
+  //   this.utenteEmail = map['utente_email'];
+  //   this.utenteUsername = map['utente_username'];
+  //   this.utentePhoneNumber = map['utente_phone_number'];
+  //   this.pvenditaDenominazione = map['pvendita_denominazione'];
+  //   this.pvenditaCatDescrizione = map['pvendita_categoria'];
+  // }
+  //
+  // Map<String, dynamic> tableMap() {
+  //   var map = new Map<String, dynamic>();
+  //   map['utente_name'] = this.utenteName;
+  //   map['utente_email'] = this.utenteEmail;
+  //   map['utente_username'] = this.utenteUsername;
+  //   map['utente_phone_number'] = this.utentePhoneNumber;
+  //   map['pvendita_denominazione'] = this.pvenditaDenominazione;
+  //   map['pvendita_categoria'] = this.pvenditaCatDescrizione;
+  //   return map;
+  // }
 }

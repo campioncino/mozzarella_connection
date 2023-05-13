@@ -1,80 +1,245 @@
 
+import 'package:bufalabuona/model/ws_error_response.dart';
+import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../model/categoria.dart';
 import '../model/listino.dart';
+import '../model/listino_prodotti.dart';
+import '../model/listino_prodotti_ext.dart';
 
-class ListiniRestService {
+class ListiniProdottiRestService {
   BuildContext context;
 
-  static ListiniRestService? _instance;
+  static ListiniProdottiRestService? _instance;
 
-  factory ListiniRestService(context) =>
-      _instance ?? ListiniRestService.internal(context);
+  factory ListiniProdottiRestService(context) =>
+      _instance ?? ListiniProdottiRestService.internal(context);
 
-  ListiniRestService.internal(this.context);
+  ListiniProdottiRestService.internal(this.context);
 
-  Future<List<Listino>?> getAllListini() async{
+  Future<WSResponse> getAll() async {
+    WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(ListinoProdottiExt.TABLE_NAME)
           .select()
       // .order('prod_id', ascending: true)
-          .execute();
+          ;
 
-      if(response.data!=null){
-        return parseList(response.data.toList());
+      if(response!=null){
+        result = AppUtils.parseWSResponse(response);}
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+  Future<WSResponse> getAllByCategoria(int catId) async {
+    WSResponse result=new WSResponse();
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdottiExt.TABLE_NAME)
+          .select()
+          .eq('cat_id',catId)
+          .order('price', ascending: false)
+          ;
+
+      if(response!=null){
+        result = AppUtils.parseWSResponse(response);}
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+  Future<WSResponse> getAllByListId(int listId) async {
+    WSResponse result=new WSResponse();
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdottiExt.TABLE_NAME)
+          .select()
+          .eq('list_id',listId)
+          .order('price', ascending: false)
+          ;
+
+      if(response!=null){
+        result = AppUtils.parseWSResponse(response);}
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+
+  Future<List<ListinoProdotti>?> getAllListiniProdotti() async{
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdotti.TABLE_NAME)
+          .select()
+      // .order('prod_id', ascending: true)
+          ;
+
+      if(response!=null){
+        return parseList(response.toList());
       }
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return null;
     }
   }
 
-  List<Listino> parseList(List responseBody) {
-    List<Listino> list = responseBody
-        .map<Listino>((f) => Listino.fromJson(f))
+  List<ListinoProdotti> parseList(List responseBody) {
+    List<ListinoProdotti> list = responseBody
+        .map<ListinoProdotti>((f) => ListinoProdotti.fromJson(f))
         .toList();
     //ordiniamoli dal più recente al più vecchio
     // list.sort((a, b) => b.presId!.compareTo(a.presId!));
     return list;
   }
 
-  Future<Listino?> getListino(int id) async{
+  List<ListinoProdottiExt> parseListExt(List responseBody) {
+    List<ListinoProdottiExt> list = responseBody
+        .map<ListinoProdottiExt>((f) => ListinoProdottiExt.fromJson(f))
+        .toList();
+    //ordiniamoli dal più recente al più vecchio
+    // list.sort((a, b) => b.presId!.compareTo(a.presId!));
+    return list;
+  }
+
+  Future<ListinoProdotti?> getListinoProdotti(int id) async{
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
+          .from(ListinoProdotti.TABLE_NAME)
           .select()
           .eq('id',id)
       // .order('prod_id', ascending: true)
-          .execute();
+          ;
 
-      if(response.data!=null){
-        return Listino.fromJson(response.data);
+      if(response!=null){
+        return ListinoProdotti.fromJson(response);
       }
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return null;
     }
   }
 
-  Future<bool> upsertListino(Listino item) async{
+  Future<WSResponse> getListinoByCatId(int catId) async {
+    WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(Listino.TABLE_NAME)
-          .upsert(item.tableMap())
-          .execute();
+          .from(ListinoProdottiExt.TABLE_NAME)
+          .select('*').eq('cat_id', catId)
+      // .order('prod_id', ascending: true)
+          ;
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
+      }
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+    }
+
+  Future<WSResponse> upsertListinoProdotti(ListinoProdotti item) async{
+    WSResponse result=new WSResponse();
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdotti.TABLE_NAME)
+          .upsert(item.tableMap()).select()
+          ;
       if (response.error == null) {
         // throw "Update profile failed: ${response.error!.message}";
-        return true;
-      }else{
-        return false;
-      }
-
+        result = AppUtils.parseWSResponse(response);}
     }catch(e){
-      debugPrint(e.toString());
-      return false;
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
     }
+    return result;
   }
+
+
+  Future<WSResponse> upsertMassiveListinoProdotti(List<ListinoProdotti> listItem) async{
+    WSResponse result=new WSResponse();
+    var o=AppUtils.removeNull(listItem.map((e) => e.tableMap()).toList());
+    try{
+
+      var response = await Supabase.instance.client
+          .from(ListinoProdotti.TABLE_NAME)
+          .upsert(o).select();
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
+      }
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+  Future<WSResponse> deleteMassiveListinoProdotti(List<ListinoProdotti> listItem) async{
+    WSResponse result=new WSResponse();
+    List<int> skus = [];
+    listItem.forEach((element) {
+      skus.add(element.sku!);
+    });
+    
+    var o=AppUtils.removeNull(listItem.map((e) => e.tableMap()).toList());
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdotti.TABLE_NAME)
+          .delete().in_('sku',skus).select();
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
+      }
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+  Future<WSResponse> deleteSingleProdotto(ListinoProdotti item) async{
+    WSResponse result=new WSResponse();
+    try{
+      var response = await Supabase.instance.client
+          .from(ListinoProdotti.TABLE_NAME)
+          .delete().match({'sku':item.sku}).select();
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
+      }
+    }catch(e){
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
+    }
+    return result;
+  }
+
+
+
 
   }

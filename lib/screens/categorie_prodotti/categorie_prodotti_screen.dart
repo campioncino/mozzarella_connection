@@ -1,33 +1,24 @@
-import 'package:bufalabuona/data/utenti_rest_service.dart';
 import 'package:bufalabuona/model/categoria.dart';
-import 'package:bufalabuona/model/listino.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
-import 'package:bufalabuona/model/utente.dart';
 import 'package:bufalabuona/model/ws_response.dart';
-import 'package:bufalabuona/screens/listini/listini_crud.dart';
-import 'package:bufalabuona/screens/listini_prodotti/listini_prodotti_crud.dart';
-import 'package:bufalabuona/screens/listini_prodotti/listini_prodotti_screen.dart';
-import 'package:bufalabuona/screens/punti_vendita/punti_vendita_crud.dart';
-import 'package:bufalabuona/screens/utenti/gestione_utenti_crud.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../data/listini_rest_service.dart';
+import '../../data/categorie_prodotti_rest_service.dart';
+import '../../model/categoria_prodotto.dart';
+import 'categorie_prodotti_crud.dart';
 
 
-class ListiniScreen extends StatefulWidget {
-  const ListiniScreen({Key? key}) : super(key: key);
+class CategorieProdottiScreen extends StatefulWidget {
+  const CategorieProdottiScreen({Key? key}) : super(key: key);
 
   @override
-  State<ListiniScreen> createState() => _ListiniScreenState();
+  State<CategorieProdottiScreen> createState() => _CategorieProdottiScreenState();
 }
 
-class _ListiniScreenState extends State<ListiniScreen> {
+class _CategorieProdottiScreenState extends State<CategorieProdottiScreen> {
   var dateFormatter = new DateFormat('dd-mm-yyyy');
   List<PuntoVendita>? puntiVenditaList;
   Categoria? _cat;
@@ -38,10 +29,10 @@ class _ListiniScreenState extends State<ListiniScreen> {
 
   final TextEditingController _searchController = new TextEditingController();
 
-  List<Listino>? _values ;
-  List<Listino> _filteredValues = [];
+  List<CategoriaProdotto>? _values ;
+  List<CategoriaProdotto> _filteredValues = [];
 
-  _ListiniScreenState() {
+  _CategorieProdottiScreenState() {
     _searchController.addListener(() {
       handleSearch(_searchController.text);
     });
@@ -54,7 +45,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
         print(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
-        List<Listino> list = _values!.where((v) {
+        List<CategoriaProdotto> list = _values!.where((v) {
           return v.descrizione!.contains(text.toUpperCase());
         }).toList();
         _filteredValues.clear();
@@ -64,10 +55,10 @@ class _ListiniScreenState extends State<ListiniScreen> {
   }
 
   readData() async {
-    WSResponse resp = await ListiniRestService.internal(context).getAll();
+    WSResponse? resp = await CategorieProdottiRestService.internal(context).getAll();
     if(resp!=null && resp.success!){
       setState((){
-        _values = ListiniRestService.internal(context).parseList(resp.data!.toList());
+        _values = CategorieProdottiRestService.internal(context).parseList(resp.data!.toList());
         _filteredValues.addAll(_values!);
       });
     }
@@ -167,7 +158,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,FontAwesomeIcons.typo3);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -179,7 +170,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
   }
 
 
-  Widget _buildChildRow(BuildContext context, Listino listini, int position){
+  Widget _buildChildRow(BuildContext context, CategoriaProdotto listini, int position){
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -193,25 +184,15 @@ class _ListiniScreenState extends State<ListiniScreen> {
                 child: InkWell(
                   onTap: ()=> _goToDetail(listini),
                   child: Container(
-                    foregroundDecoration:(!listini.active!) ? const RotatedCornerDecoration(
-                      color: Colors.red,
-                      geometry: const BadgeGeometry(width: 34, height: 34,cornerRadius: 12),
-                      // textSpan: const TextSpan(
-                      //   text: 'NON\nATTIVO',
-                      //   style: TextStyle(fontSize: 11,color: Colors.white),
-                      // ),
-                    ) : null,
                     width: double.infinity,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0,vertical: 7),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 15,),
                           // Text(utentiList![index].toJson().toString()),
-                          Text(listini.descrizione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                          Text(AppUtils.formPostgresStringDate(listini.dtIniVal ?? '').toString()),
-                          if(listini.dtFinVal!=null)Text(AppUtils.formPostgresStringDate(listini.dtFinVal).toString()),
+                          Text("Codice : ${listini.codice!}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                          Text("Descrizione : ${listini.descrizione!}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
                         ],
                       ),
                     ),
@@ -225,35 +206,27 @@ class _ListiniScreenState extends State<ListiniScreen> {
     );
   }
 
-  void _goToDetail(Listino data){
+  void _goToDetail(CategoriaProdotto data){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new ListiniProdottiScreen(listino: data,lovMode: false,))).then((value) => _refresh());
+        new CategorieProdottiCrud(updateMode: true,categoria: data,))).then((value) => _refresh());
   }
 
-  void _goToEdit(Listino data){
+  void _goToEdit(CategoriaProdotto data){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new ListiniProdottiScreen(listino: data,lovMode: false,))).then((value) => _refresh());
+        new CategorieProdottiCrud())).then((value) => _refresh());
   }
 
   _goToInsert(){
     Navigator.push(context,  MaterialPageRoute(
         builder: (context) =>
-        new ListiniCrud(listino: null,updateMode: false, listini: _values,))).then((value) => _refresh());
+        new CategorieProdottiCrud(categoria: null,updateMode: false, categorieList: _values,))).then((value) => _refresh());
 
   }
 
 
   Future<void> _refresh() async{
-    // Fluttertoast.showToast(
-    //     msg: "Refresh",
-    //     toastLength: Toast.LENGTH_LONG,
-    //     gravity: ToastGravity.CENTER,
-    //     timeInSecForIosWeb: 3,
-    //     backgroundColor: Colors.bl[200],
-    //     fontSize: 16.0
-    // );
     _filteredValues.clear();
     _values!.clear();
     readData();
@@ -283,9 +256,6 @@ class _ListiniScreenState extends State<ListiniScreen> {
 
   Future onSearchButtonClear() async {
     setState(() {
-      //This is not working. Exception - invalid text selection: TextSelection(baseOffset: 2, extentOffset: 2, affinity: TextAffinity.upstream, isDirectional: false)
-      //ref https://github.com/flutter/flutter/issues/17647
-      //_searchController.clear();
       WidgetsBinding.instance.addPostFrameCallback((_) => _searchController.clear());
     });
   }

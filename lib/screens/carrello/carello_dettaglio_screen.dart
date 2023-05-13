@@ -4,6 +4,7 @@ import 'package:bufalabuona/data/cart_item_rest_service.dart';
 import 'package:bufalabuona/data/ordini_rest_service.dart';
 import 'package:bufalabuona/data/stato_ordine_rest_service.dart';
 import 'package:bufalabuona/model/cart_item.dart';
+import 'package:bufalabuona/model/cart_item_ext.dart';
 import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
@@ -13,31 +14,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class CarrelloUtenteScreen extends StatefulWidget {
-  final Map<ListinoProdottiExt,int> listCart;
+class CarrelloDettaglioScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
-  const CarrelloUtenteScreen({Key? key,required this.listCart,required this.puntoVendita}) : super(key: key);
+  final Ordine? ordine;
+  const CarrelloDettaglioScreen({Key? key,required this.ordine,required this.puntoVendita}) : super(key: key);
 
   @override
-  State<CarrelloUtenteScreen> createState() => _CarrelloUtenteScreenState();
+  State<CarrelloDettaglioScreen> createState() => _CarrelloDettaglioScreenState();
 }
 
-class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
+class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   PuntoVendita? _puntoVendita;
+  Ordine? _ordine;
 
-  List<ListinoProdottiExt> _values =[];
-  List<ListinoProdottiExt> _filteredValues = [];
+  List<CartItemExt> _values =[];
+  List<CartItemExt> _filteredValues = [];
   bool _isLoading=true;
   bool? _sendOrder = false;
-  late Map<ListinoProdottiExt,int> _listCart;
+   Map<ListinoProdottiExt,int> _listCart = Map();
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _listCart=this.widget.listCart;
+    _ordine=this.widget.ordine;
     _puntoVendita=this.widget.puntoVendita;
     _filteredValues.clear();
     init();
@@ -51,12 +53,22 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
   }
 
   readData() async{
-    if(_listCart.isNotEmpty){
-      setState(() {
-        _values.clear();
-        _values.addAll(_listCart.keys);
-        _filteredValues=_values;
-      });
+    if(_ordine!=null){
+      WSResponse resp = await CartItemRestService.internal(context).getCartItemExtByOrdineId(_ordine!.id!);
+      if(resp.success!= null && resp.success!){
+        setState((){
+          _values = CartItemRestService.internal(context).parseListExt(resp.data!.toList());
+          _filteredValues.addAll(_values);
+        });
+      }
+      else{
+        debugPrint("errore!!");
+      }
+      // setState(() {
+      //   _values.clear();
+      //   _values.addAll(_listCart.keys);
+      //   _filteredValues=_values;
+      // });
     }
   }
 
@@ -74,7 +86,7 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
             child: stackWidget()),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     floatingActionButton :FloatingActionButton.extended(onPressed: _submit,
-      label:  Text("Procedi all'ordine",style: TextStyle(fontSize: 22,)),
+      label:  Text("Conferma",style: TextStyle(fontSize: 22,)),
     isExtended: true,backgroundColor:
     Colors.amberAccent,)
       ),
@@ -103,7 +115,7 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        puntovenditaCard(),
+        if(_puntoVendita!=null)puntovenditaCard(),
         Flexible(child: _createList(context)),
         Padding(
           padding: const EdgeInsets.only(bottom: 10.0),
@@ -113,14 +125,15 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.max,
               children: [
-                Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.green,fontWeight: FontWeight.bold),)
+                Text("Totale Ordine ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),)
               ],
             ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 118.0),
-          child: MaterialButton(onPressed: (){},child: Text("Salva carrello",style: TextStyle(color:Colors.blueAccent),),),
+          child:Container(height: 0,)
+          // MaterialButton(onPressed: (){},child: Text("Salva carrello",style: TextStyle(color:Colors.blueAccent),),),
         )
       ],
     ));
@@ -130,13 +143,13 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
     if (_isLoading) {
       return AppUtils.loader(context);
     }
-    if (this._filteredValues.isEmpty) {
+    if (this._values.isEmpty) {
       return AppUtils.emptyList(context,FontAwesomeIcons.slash);
     }
     var list = ListView.builder(
-        itemCount: _filteredValues.length,
+        itemCount: _values.length,
         itemBuilder: (context, position) {
-          return _buildChildRow(context, _filteredValues[position], position);
+          return _buildChildRow(context, _values[position], position);
         });
 
     return RefreshIndicator(child: list, onRefresh: _refresh,strokeWidth: 3,);
@@ -144,11 +157,11 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
 
   Future<void> _refresh() async{
     _filteredValues.clear();
-    _values!.clear();
+    _values.clear();
     readData();
   }
 
-  Widget _buildChildRow(BuildContext context, ListinoProdottiExt listini, int position){
+  Widget _buildChildRow(BuildContext context, CartItemExt listini, int position){
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -171,32 +184,33 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
                           child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(listini.prodDenominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                                  Text(listini.prodDescrzione ?? ''),
-                                  Text("${listini.prodQuantita} ${listini.prodUnimisDescrizione} "),
-                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 22,color: Colors.green),)
+                                  Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                                  Text(listini.prodDescrizione ?? ''),
+                                  Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
+                                  Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 22,color: Colors.green),),
+                                  Text("${listini.status??''}"),
                                 ],
                               ),
                         ),
-                          Row(
-                            mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              IconButton(icon: Container(
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(width: 2, color: Colors.green)),
-                                  child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
-                              SizedBox(width: 10,),
-                              Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
-                              SizedBox(width: 10,),
-                              IconButton(icon: Container(
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.green,)),onPressed: ()=>addElementToList(listini),)
-
-                            ],
-                          ),
+                          // Row(
+                          //   mainAxisAlignment:MainAxisAlignment.spaceBetween ,
+                          //   crossAxisAlignment: CrossAxisAlignment.center,
+                          //   children: [
+                          //     IconButton(icon: Container(
+                          //         decoration: BoxDecoration(
+                          //             borderRadius: BorderRadius.circular(100),
+                          //             border: Border.all(width: 2, color: Colors.green)),
+                          //         child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
+                          //     SizedBox(width: 10,),
+                          //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
+                          //     SizedBox(width: 10,),
+                          //     IconButton(icon: Container(
+                          //         decoration: BoxDecoration(
+                          //             borderRadius: BorderRadius.circular(100),
+                          //             border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.green,)),onPressed: ()=>addElementToList(listini),)
+                          //
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),
@@ -228,7 +242,6 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
     }
 
   bool checkElementInCart(ListinoProdottiExt item){
-    debugPrint(_listCart.toString());
     bool isPresent=false;
     _listCart.forEach((key, value) {if(key.prodId==item.prodId){
       isPresent=true;
@@ -264,27 +277,27 @@ class _CarrelloUtenteScreenState extends State<CarrelloUtenteScreen> {
 
   String _calcolaTotaleOrdine(){
      num total=0;
-    _listCart.forEach((key, value) {
-      var price= key.price! * value;
+    _values.forEach((value) {
+      var price= value.price! * value.quantita!;
       total+=price;
     });
     return total.toString();
   }
 
    _submit() async {
-
-     _sendOrder = await askContinua(context);
-     if(_sendOrder!){
-       setState(() {
-         _isLoading=true;
-       });
-
-     await _createOrderAndRegisterCartItems();
-     }
-    setState(() {
-      _isLoading=false;
-    });
-    debugPrint("delayed end");
+    ///TODO QUA DOVREMMO
+    //  _sendOrder = await askContinua(context);
+    //  if(_sendOrder!){
+    //    setState(() {
+    //      _isLoading=true;
+    //    });
+    //
+    //  await _createOrderAndRegisterCartItems();
+    //  }
+    // setState(() {
+    //   _isLoading=false;
+    // });
+    // debugPrint("delayed end");
 
   }
 

@@ -1,4 +1,4 @@
-import 'package:farmaco/pages/drawer_item.dart';
+import 'package:bufalabuona/screens/drawer_item.dart';
 import 'package:flutter/material.dart';
 
 class DrawerMenuDivider extends DrawerItem {

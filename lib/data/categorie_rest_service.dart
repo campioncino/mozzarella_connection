@@ -1,69 +1,75 @@
 
+import 'package:bufalabuona/model/ws_error_response.dart';
+import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/categoria.dart';
 
-import '../model/cart_item.dart';
-
-class CartItemRestService {
+class CategorieRestService {
   BuildContext context;
 
-  static CartItemRestService? _instance;
+  static CategorieRestService? _instance;
 
-  factory CartItemRestService(context) =>
-      _instance ?? CartItemRestService.internal(context);
+  factory CategorieRestService(context) =>
+      _instance ?? CategorieRestService.internal(context);
 
-  CartItemRestService.internal(this.context);
+  CategorieRestService.internal(this.context);
 
-  Future<List<CartItem>?> getAllCartItem() async{
+  Future<WSResponse> getAll() async{
+    WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
-          .from(CartItem.TABLE_NAME)
+          .from(Categoria.TABLE_NAME)
           .select()
       // .order('prod_id', ascending: true)
-          .execute();
-
-      if(response.data!=null){
-        return parseList(response.data.toList());
+          ;
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
       }
     }catch(e){
-      debugPrint(e.toString());
-      return null;
+    WSErrorResponse err = new WSErrorResponse();
+    err.message=e.toString();
+    result.errors ??= [];
+    result.errors!.add(err);
     }
+  return result;
   }
 
-  List<CartItem> parseList(List responseBody) {
-    List<CartItem> list = responseBody
-        .map<CartItem>((f) => CartItem.fromJson(f))
+  List<Categoria> parseList(List responseBody) {
+    List<Categoria> list = responseBody
+        .map<Categoria>((f) => Categoria.fromJson(f))
         .toList();
     //ordiniamoli dal più recente al più vecchio
     // list.sort((a, b) => b.presId!.compareTo(a.presId!));
     return list;
   }
 
-  Future<CartItem?> getCartItem(int id) async{
+  Future<Categoria?> getCategoria(int id) async{
     try{
       var response = await Supabase.instance.client
-          .from(CartItem.TABLE_NAME)
+          .from(Categoria.TABLE_NAME)
           .select()
           .eq('id',id)
       // .order('prod_id', ascending: true)
-          .execute();
+          ;
 
-      if(response.data!=null){
-        return CartItem.fromJson(response.data);
+      if(response!=null){
+        return Categoria.fromJson(response);
       }
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return null;
     }
   }
 
-  Future<bool> upsertCartItem(CartItem cartItem) async{
+  Future<bool> upsertCategoria(Categoria item) async{
     try{
       var response = await Supabase.instance.client
-          .from(CartItem.TABLE_NAME)
-          .upsert(cartItem.tableMap())
-          .execute();
+          .from(Categoria.TABLE_NAME)
+          .upsert(item.tableMap())
+          ;
       if (response.error == null) {
         // throw "Update profile failed: ${response.error!.message}";
         return true;
@@ -72,7 +78,8 @@ class CartItemRestService {
       }
 
     }catch(e){
-      debugPrint(e.toString());
+      debugPrint("error :${e.toString()}");
+
       return false;
     }
   }

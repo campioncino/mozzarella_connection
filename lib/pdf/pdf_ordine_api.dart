@@ -2,45 +2,88 @@ import 'dart:io';
 import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/pdf/pdf_api.dart';
-import 'package:generate_pdf_invoice_example/api/pdf_api.dart';
-import 'package:generate_pdf_invoice_example/model/customer.dart';
-import 'package:generate_pdf_invoice_example/model/invoice.dart';
-import 'package:generate_pdf_invoice_example/model/supplier.dart';
-import 'package:generate_pdf_invoice_example/utils.dart';
+import 'package:flutter/services.dart';
+// import 'package:generate_pdf_invoice_example/api/pdf_api.dart';
+// import 'package:generate_pdf_invoice_example/model/customer.dart';
+// import 'package:generate_pdf_invoice_example/model/invoice.dart';
+// import 'package:generate_pdf_invoice_example/model/supplier.dart';
+// import 'package:generate_pdf_invoice_example/utils.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/widgets.dart';
 
 import '../model/cart_item_ext.dart';
 import '../model/ordine_ext.dart';
+import '../utils/app_utils.dart';
 
 class PdfOrdineApi {
-  static Future<File> generate(OrdineExt ordine,List<CartItemExt> prodotti) async {
+  static Future<File> generate(Ordine ordine,List<CartItemExt> prodotti, PuntoVendita puntovendita) async {
     final pdf = Document();
+    final font = await rootBundle.load("assets/fonts/open_sans_regular.ttf");
+
+
+
+    // String? logo = await rootBundle.loadString('assets/images/bbc.svg');
 
     pdf.addPage(MultiPage(
+      theme: ThemeData.withFont(
+        base: Font.ttf(await rootBundle.load("assets/fonts/arial.ttf")),
+        bold: Font.ttf(await rootBundle.load("assets/fonts/arial.ttf")),
+        italic: Font.ttf(await rootBundle.load("assets/fonts/open_sans_regular.ttf")),
+        boldItalic: Font.ttf(await rootBundle.load("assets/fonts/arial.ttf")),
+      ),
       build: (context) => [
-        buildHeader(ordine),
-        SizedBox(height: 3 * PdfPageFormat.cm),
+        // buildHeader(ordine,puntovendita),
+        buildHeader(ordine,puntovendita),
+        Divider(),
+        SizedBox(height: 3 * PdfPageFormat.mm),
+        Text('Consegna prevista il ${AppUtils.dateToString(ordine.dtConsegna)}, presso ${ordine.indirizzoConsegna}'),
+        SizedBox(height: 8 * PdfPageFormat.mm),
         buildTitle(ordine),
         buildInvoice(prodotti),
         Divider(),
-        buildTotal(ordine),
+        buildTotal(ordine,prodotti),
       ],
+      header: (context)=>  Column(
+          children: [ Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+
+            // pw.SvgImage(svg:logo,width: 55),
+            SizedBox(width: 20),
+            buildSupplierAddress(),
+          ]),SizedBox(height: 1 * PdfPageFormat.mm),
+
+        Divider(height: 1 * PdfPageFormat.mm,
+            // color: PdfColor.fromHex('bfd5e3')
+        )]),
       footer: (context) => buildFooter(ordine),
     ));
 
     return PdfApi.saveDocument(name: '${ordine.numero}.pdf', pdf: pdf);
   }
 
-  static Widget buildHeader(OrdineExt ordine) => Column(
+  static Widget buildHeader(Ordine ordine,PuntoVendita puntoVendita) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SizedBox(height: 1 * PdfPageFormat.cm),
+      SizedBox(height: 5 * PdfPageFormat.mm),
       Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          buildCustomerAddress(puntoVendita),
+        ],
+      ),
+      Divider(),
+      Text('ORDINE',style: TextStyle(fontSize: 22,fontWeight: FontWeight.bold)),
+
+      SizedBox(height: 3 * PdfPageFormat.mm),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          buildSupplierAddress(ordine),
+          buildInvoiceInfo(ordine),
           Container(
             height: 50,
             width: 50,
@@ -51,42 +94,37 @@ class PdfOrdineApi {
           ),
         ],
       ),
-      SizedBox(height: 1 * PdfPageFormat.cm),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          buildCustomerAddress(ordine),
-          buildInvoiceInfo(ordine),
-        ],
-      ),
-    ],
+      ],
   );
 
   static Widget buildCustomerAddress(PuntoVendita puntoVendita) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      Text("Spettabile"),
       Text(puntoVendita.denominazione!, style: TextStyle(fontWeight: FontWeight.bold)),
       Text(puntoVendita.ragSociale!),
       SizedBox(height: 5),
-      Text('Partita Iva:${puntoVendita.partitaIva!}'),
-      Text()
+      Text('Partita Iva: ${puntoVendita.partitaIva!}'),
+      Text('Id Fatturazione: ${puntoVendita.idFatturazione}')
     ],
   );
 
-  static Widget buildInvoiceInfo(InvoiceInfo info) {
-    final paymentTerms = '${info.dueDate.difference(info.date).inDays} days';
+  static Widget buildInvoiceInfo(Ordine ordine) {
+    String statoOrdine=ordine.statoCodice!;
+    if(ordine.statoCodice=='INVIATO'){
+      statoOrdine+=' *';
+    }
     final titles = <String>[
-      'Invoice Number:',
-      'Invoice Date:',
-      'Payment Terms:',
-      'Due Date:'
+      'Stato:',
+      'Numero: ',
+      'Effttuato il:',
+      'Note:'
     ];
     final data = <String>[
-      info.number,
-      Utils.formatDate(info.date),
-      paymentTerms,
-      Utils.formatDate(info.dueDate),
+      statoOrdine,
+      '${ordine.numero.toString()}',
+      AppUtils.convertTimestamptzToStringDate(ordine.createdAt??'').substring(0,10)?? '',
+      ordine.note??''
     ];
 
     return Column(
@@ -100,47 +138,48 @@ class PdfOrdineApi {
     );
   }
 
+
   static Widget buildSupplierAddress() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(supplier.name, style: TextStyle(fontWeight: FontWeight.bold)),
-      SizedBox(height: 1 * PdfPageFormat.mm),
-      Text(supplier.address),
+      Text("Bufala Buona", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 33)),
+      // SizedBox(height: 1 * PdfPageFormat.mm),
+      Text("Azienda Agricola Giancarlo D'Angelo"),
+      // SizedBox(height: 1 * PdfPageFormat.mm),
+      // Text( 'Via Salaria 1965 (km 19,600) - Roma'),
     ],
   );
 
-  static Widget buildTitle(Invoice invoice) => Column(
+  static Widget buildTitle(Ordine ordine) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'INVOICE',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        'PRODOTTI',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
-      SizedBox(height: 0.8 * PdfPageFormat.cm),
-      Text(invoice.info.description),
-      SizedBox(height: 0.8 * PdfPageFormat.cm),
+      SizedBox(height: 0.3 * PdfPageFormat.cm),
     ],
   );
 
-  static Widget buildInvoice(Invoice invoice) {
+  static Widget buildInvoice(List<CartItemExt> prodotti) {
     final headers = [
-      'Description',
-      'Date',
-      'Quantity',
-      'Unit Price',
-      'VAT',
-      'Total'
+      'Cod',
+      'Denominazione',
+      'Descrizione',
+      'Quantita',
+      'Prezzo Unitario',
+      'TOTALE'
     ];
-    final data = invoice.items.map((item) {
-      final total = item.unitPrice * item.quantity * (1 + item.vat);
+    final data = prodotti.map((item) {
+      var price= item.price! * item.quantita!;
 
       return [
-        item.description,
-        Utils.formatDate(item.date),
-        '${item.quantity}',
-        '\$ ${item.unitPrice}',
-        '${item.vat} %',
-        '\$ ${total.toStringAsFixed(2)}',
+        item.prodCodice,
+        item.prodDenominazione,
+        item.prodDescrizione,
+        '${item.quantita} (${item.prodUnimisCodice})',
+        '${item.price} \€',
+        '${price.toString()} \€'
       ];
     }).toList();
 
@@ -151,22 +190,29 @@ class PdfOrdineApi {
       headerStyle: TextStyle(fontWeight: FontWeight.bold),
       headerDecoration: BoxDecoration(color: PdfColors.grey300),
       cellHeight: 30,
+      columnWidths:{
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(5),
+        2: FlexColumnWidth(3),
+        3: FlexColumnWidth(2),
+        4: FlexColumnWidth(2),
+        5: FlexColumnWidth(3),
+      },
       cellAlignments: {
         0: Alignment.centerLeft,
-        1: Alignment.centerRight,
-        2: Alignment.centerRight,
-        3: Alignment.centerRight,
-        4: Alignment.centerRight,
+        1: Alignment.centerLeft,
+        2: Alignment.centerLeft,
+        3: Alignment.centerLeft,
+        4: Alignment.center,
         5: Alignment.centerRight,
       },
     );
   }
 
-  static Widget buildTotal(Invoice invoice) {
-    final netTotal = invoice.items
-        .map((item) => item.unitPrice * item.quantity)
+  static Widget buildTotal(Ordine ordine,List<CartItemExt> prodotti) {
+    final netTotal = prodotti.map((item) => item.price! * item.quantita!)
         .reduce((item1, item2) => item1 + item2);
-    final vatPercent = invoice.items.first.vat;
+    final vatPercent = 0.04;// invoice.items.first.vat;
     final vat = netTotal * vatPercent;
     final total = netTotal + vat;
 
@@ -181,23 +227,24 @@ class PdfOrdineApi {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 buildText(
-                  title: 'Net total',
-                  value: Utils.formatPrice(netTotal),
+                  title: 'Totale',
+                  value: '${netTotal.toString()} €',
                   unite: true,
                 ),
                 buildText(
-                  title: 'Vat ${vatPercent * 100} %',
-                  value: Utils.formatPrice(vat),
+                  title: 'Iva ${vatPercent * 100} %',
+                  value: '${vat.toString()} €',
                   unite: true,
+
                 ),
                 Divider(),
                 buildText(
-                  title: 'Total amount due',
+                  title: 'Totale dovuto',
                   titleStyle: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
-                  value: Utils.formatPrice(total),
+                  value: '${total.toString()} €',
                   unite: true,
                 ),
                 SizedBox(height: 2 * PdfPageFormat.mm),
@@ -212,14 +259,21 @@ class PdfOrdineApi {
     );
   }
 
-  static Widget buildFooter(Invoice invoice) => Column(
+  static Widget buildFooter(Ordine ordine) => Column(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Divider(),
-      SizedBox(height: 2 * PdfPageFormat.mm),
-      buildSimpleText(title: 'Address', value: invoice.supplier.address),
-      SizedBox(height: 1 * PdfPageFormat.mm),
-      buildSimpleText(title: 'Paypal', value: invoice.supplier.paymentInfo),
+      if(ordine.statoCodice=='INVIATO')Text("*ATTENZIONE: l'ordine in stato INVIATO non è stato ancora confermato dal venditore, potrebbe quindi subire ancora delle modifiche legate alla disponibilità dei prodotti o alla data di consegna",style: TextStyle(fontSize:9)),
+
+
+      // SizedBox(height: 1 * PdfPageFormat.mm),
+      // buildSimpleText(title: 'Partita IVa', value:'XXXXX'),
+      // SizedBox(height: 1 * PdfPageFormat.mm),
+      // Row(
+      //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //     children: [ buildSimpleText(title: 'Telefono ', value:'391.40.86.120'),
+      //   buildSimpleText(title: 'email ', value:'caseificio@aziendaagricoladangelo.com'),
+      // ])
     ],
   );
 

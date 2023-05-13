@@ -1,3 +1,4 @@
+import 'package:bufalabuona/main.dart';
 import 'package:bufalabuona/model/utente.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,7 +9,6 @@ import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../main.dart';
 import '/components/auth_required_state.dart';
 
 
@@ -36,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _user;
   bool loadingProfile = true;
   bool isValid=false;
-  String _appBarTitle = '';
+  String _appBarTitle = 'Profilo';
   TextEditingController? _usernameController;
   TextEditingController? _phoneNumberController ;
   TextEditingController? _fullNameController ;
@@ -52,21 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   FocusNode _focus = new FocusNode();
 
 
-  // @override
-  // void initState() {
-  //   // TODO: implement initState
-  //   final session = supabase.auth.currentSession;
-  //   _user = session?.user;
-  //   super.initState();
-  //   initProfile();
-  // }
-
   @override
   void initState() {
     super.initState();
     _options = this.widget.options;
     initUtente();
-    // AppUtils.utente = _utente!;
   }
 
   @override
@@ -202,9 +192,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }else{
     try {
       FocusScope.of(context).unfocus();
-
       final updates = {
-        'id': _user?.id,
+        'id': _utente!.profileId,
         'username': _username,
         'updated_at': DateTime.now().toString(),
         'phone_number': _phoneNumber,
@@ -212,16 +201,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'email':_email
       };
 
-      final response = await Supabase.instance.client
+      final response = await supabase
           .from('profiles')
-          .upsert(updates)
+          .upsert(updates).select()
           ;
-      if (response.error != null) {
-        throw "Update profile failed: ${response.error!.message}";
+      if (response!= null) {
+        showMessage("Profilo aggiornato con successo!");
+      }else{
+        throw "Errore nell'aggiornamento del profilo: ${response.error!.message}";
       }
-
-      showMessage("Profile updated!");
-      // Navigator.pushNamed(context, '/profile/changePassword');
     } catch (e) {
       showMessage(e.toString());
     } finally {
@@ -231,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void showMessage(String message) {
-    final snackbar = SnackBar(content: Text(message));
+    final snackbar = SnackBar(content: Text(message,style: TextStyle(color: Colors.greenAccent),),backgroundColor: Colors.white70,);
     ScaffoldMessenger.of(scaffoldKey.currentContext!).showSnackBar(snackbar);
   }
 
@@ -239,9 +227,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     if (loadingProfile) {
       return Scaffold(
-        // appBar: AppBar(
-        //   title: Text(_appBarTitle),
-        // ),
+        appBar: AppBar(
+          title: _utente!.ruolo =='admin' ? null :Text(_appBarTitle),
+        ),
         body: SizedBox(
           height: MediaQuery.of(context).size.height / 1.3,
           child: const Center(
@@ -253,9 +241,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         key: scaffoldKey,
         resizeToAvoidBottomInset: false,
-        // appBar: AppBar(
-        //   title: Text(_appBarTitle),
-        // ),
+        appBar:  AppBar(
+          title: _utente!.ruolo =='admin' ? null : Text(_appBarTitle),
+        ) ,
         body: Container(
           child: SingleChildScrollView(
             controller: _scroll ,
@@ -353,8 +341,8 @@ Widget formFields(){
               const SizedBox(
                 height: 35.0,
               ),
-              TextButton(onPressed: _validateInputs, child: Text('aggiorna')),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.green,
                 controller: _updateProfileBtnController,
                 onPressed: () {
@@ -371,12 +359,13 @@ Widget formFields(){
                 child: const Text("Cambia password"),
               ),
               RoundedLoadingButton(
+                borderRadius: 15,
                 color: Colors.red,
                 controller: _signOutBtnController,
                 onPressed: () {
                   _onSignOutPress(context);
                 },
-                child: const Text('Sign out',
+                child: const Text('Cambia utente',
                     style: TextStyle(fontSize: 20, color: Colors.white)),
               ),
             ],),

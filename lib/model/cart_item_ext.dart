@@ -1,59 +1,56 @@
+import 'package:bufalabuona/model/cart_item.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
-part 'cart_item.g.dart';
+part 'cart_item_ext.g.dart';
 
 @JsonSerializable(
   includeIfNull: false,
   explicitToJson: true,
 )
-class CartItem extends WSResponse {
+class CartItemExt extends CartItem {
 
-  static const String TABLE_NAME = "cart_item";
+  static const String TABLE_NAME = "v_cart_item";
 
-  CartItem();
+  CartItemExt();
 
-  factory CartItem.fromJson(Map<String, dynamic> json) => _$CartItemFromJson(json);
+  factory CartItemExt.fromJson(Map<String, dynamic> json) => _$CartItemExtFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CartItemToJson(this);
+  Map<String, dynamic> toJson() => _$CartItemExtToJson(this);
 
-  int? id;
-  @JsonKey(name: 'created_at')
-  String? createdAt;
-  // @JsonKey(name: 'cart_id')
-  // int? cartId;
-  @JsonKey(name: 'order_id')
-  int? orderId;
-  @JsonKey(name: 'prod_id')
-  int? prodId;
-  String? stato;
-  num? quantita;
-  String? note;
+  @JsonKey(name: 'cat_id')
+  int? catId;
+  @JsonKey(name: 'cat_descrizione')
+  String? catDescrizione;
+  @JsonKey(name: 'list_id')
+  int? listId;
+  @JsonKey(name: 'list_descrizione')
+  String? listDescrizione;
+  num? price;
+  @JsonKey(name: 'prod_codice')
+  String? prodCodice;
+  @JsonKey(name: 'prod_denominazione')
+  String? prodDenominazione;
+  @JsonKey(name: 'prod_descrizione')
+  String? prodDescrizione;
+  @JsonKey(name: 'prod_unimis_codice')
+  String? prodUnimisCodice;
+  @JsonKey(name: 'prod_unimis_descrizione')
+  String? prodUnimisDescrizione;
 
   @override
-  CartItem.fromDBMap(Map map) {
-    this.id = map['id'];
-    this.createdAt = map['created_at'];
-    // this.cartId = map['cart_id'];
-    this.orderId = map['order_id'];
-    this.prodId = map['prod_id'];
-    this.stato = map['status'];
-    this.quantita = map['quantita'];
-    this.note = map['note'];
+  CartItemExt.fromDBMap(Map map) {
+    this.catId = map['cat_id'];
+    this.catDescrizione = map['cat_descrizione'];
+    this.listId = map['list_id'];
+    this.listDescrizione = map['list_descrizione'];
+    this.price = map['price'];
+    this.prodCodice = map['prod_codice'];
+    this.prodDescrizione = map['prod_descrizione'];
+    this.prodDenominazione = map['prod_denominazione'];
+    this.prodUnimisCodice= map['prod_unimis_codice'];
+    this.prodUnimisDescrizione= map['prod_unimis_descrizione'];
+
   }
 
-  Map<String, dynamic> tableMap() {
-    var map = new Map<String, dynamic>();
-    if (this.id != null) {
-      map['id'] = this.id;
-    }
-    map['created_at']=this.createdAt ;
-    // map['cart_id']=this.cartId ;
-    map['order_id'] = this.orderId;
-    map['prod_id']=this.prodId ;
-    map['quantita']=this.quantita;
-    map['status']=this.stato ;
-    map['note'] = this.note;
-    return map;
-  }
 }

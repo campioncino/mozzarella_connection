@@ -1,27 +1,49 @@
+import 'dart:io';
+
 import 'package:bufalabuona/model/utente.dart';
+import 'package:bufalabuona/screens/categorie_prodotti/categorie_prodotti_screen.dart';
 import 'package:bufalabuona/screens/drawer_item.dart';
 import 'package:bufalabuona/screens/drawer_menu_divider.dart';
 import 'package:bufalabuona/screens/drawer_menu_item.dart';
 import 'package:bufalabuona/screens/listini/listini_screen.dart';
+import 'package:bufalabuona/screens/login/profile_screen.dart';
+import 'package:bufalabuona/screens/ordini/storico_ordini_admin_screen.dart';
+import 'package:bufalabuona/screens/ordini/storico_ordini_utente_screen.dart';
 import 'package:bufalabuona/screens/prodotti/prodotti_screen.dart';
 // import 'package:bufalabuona/screens/prodotti/prodotti_list.dart';
-import 'package:bufalabuona/screens/profile_screen.dart';
 import 'package:bufalabuona/screens/punti_vendita/punti_vendita_screen.dart';
+import 'package:bufalabuona/screens/report/report_produzione.dart';
 import 'package:bufalabuona/screens/utenti/gestione_utenti_screen.dart';
+import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:collection/collection.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:platform_device_id/platform_device_id.dart';
+
+import '../../main.dart';
 
 class HomeAdmin extends StatefulWidget {
-  const HomeAdmin({Key? key, required this.options}) : super(key: key);
-  // final Utente utente;
   final Map<String?, dynamic>? options;
+  const HomeAdmin({Key? key, required this.options}) : super(key: key);
+
   @override
   State<HomeAdmin> createState() => _HomeAdminState();
 }
 
 class _HomeAdminState extends State<HomeAdmin> {
+  late final FirebaseMessaging _messaging;
+
+  FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  String? fcmToken;
+
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String appVersion = '';
+  Map? googleData;
   int? _selectedDrawerIndex;
   int? _selectedItem;
   var _selectedPage;
@@ -39,29 +61,46 @@ class _HomeAdminState extends State<HomeAdmin> {
   static const int MENU_ADMIN_LISTINI = 2;
   static const int MENU_ADMIN_PRODOTTI = 3;
   static const int MENU_ADMIN_PUNTI_VENDITA = 4;
+  static const int MENU_ADMIN_ORDINI = 5;
+  static const int MENU_ADMIN_CAT_PRODOTTI = 6;
+  static const int MENU_ADMIN_REPORT_PRODUZIONE = 7;
   static const int MENU_PROFILO = 10;
+
   static const int MENU_LOGOUT = 99;
 
-  String appVersion = '';
   Utente? _utente;
   Map<String?, dynamic>? _options;
 
   @override
   void initState() {
+    super.initState();
+    Firebase.initializeApp();
     _options = this.widget.options;
     initUtente();
+    AppUtils.utente = _utente!;
+    firebaseCloudMessagingListeners();
     init();
   }
 
   initUtente() async {
-    _options = this.widget.options;
-    _utente = _options!['utente'];
-    roles.add(_utente!.ruolo);
-    if (roles.contains("admin")) {
-      hasProfiloAdmin = true;
-    } else {
-      hasProfiloClient = true;
+
+    if(_options!=null){
+      _options = this.widget.options;
+      if(_options!['utente']!=null){
+        _utente = _options!['utente'];
+        roles.add(_utente!.ruolo);
+        if (roles.contains("admin")) {
+          hasProfiloAdmin = true;
+        } else {
+          hasProfiloClient = true;
+        }
+      }
+    }else{
+      debugPrint("qua non ci dovrei manco passare");
+      // _utente= await _loadUtente(user!.id);
     }
+    await manageFirebaseToken();
+    _options!['utente']=_utente;
   }
 
   Future init() async {
@@ -84,12 +123,22 @@ class _HomeAdminState extends State<HomeAdmin> {
     if (hasProfiloAdmin) {
       _initialIndex =
           menuItems.keys.firstWhere((k) => menuItems[k] == MENU_ADMIN_UTENTI);
-      ;
+
     }
     if (hasProfiloClient) {
       _initialIndex =
           menuItems.keys.firstWhere((k) => menuItems[k] == MENU_PROFILO);
     }
+
+    _options;
+    if (_options!= null && _options!['route']!=null) {
+      if (_options!['route'] == 'ORDINI') {
+        _initialIndex= menuItems.keys.firstWhere((k) => menuItems[k]==MENU_ADMIN_ORDINI, orElse:()=> 1);
+      }
+    }else{
+      _options!['roles']=roles;
+    }
+
 
     setState(() {
       if (_initialIndex != null) {
@@ -122,10 +171,16 @@ class _HomeAdminState extends State<HomeAdmin> {
         return ProdottiScreen();
       case MENU_ADMIN_PUNTI_VENDITA:
         return PuntiVenditaScreen();
+      case MENU_ADMIN_ORDINI:
+        return StoricoOrdiniAdminScreen();
       case MENU_PROFILO:
-        return ProfileScreen();
+        return ProfileScreen(options: _options,);
+      case MENU_ADMIN_CAT_PRODOTTI:
+        return CategorieProdottiScreen();
+      case MENU_ADMIN_REPORT_PRODUZIONE :
+        return ReportProduzione();
       default:
-        return ProfileScreen();
+        return ProfileScreen(options: _options);
     }
   }
 
@@ -136,12 +191,20 @@ class _HomeAdminState extends State<HomeAdmin> {
     if (hasProfiloAdmin) {
       var vetDrawerItems = [
         DrawerMenuDivider(null, "Amministrazione", Colors.blue),
+        DrawerMenuItem(MENU_ADMIN_ORDINI, "Gestione Ordini",
+            Icon(FontAwesomeIcons.listCheck)),
+        DrawerMenuItem(MENU_ADMIN_REPORT_PRODUZIONE, "Report Produzione",
+            Icon(FontAwesomeIcons.chartPie)),
+        DrawerMenuDivider(null, "Gestione Prodotti", Colors.orange),
+        DrawerMenuItem(
+            MENU_ADMIN_PRODOTTI, "Elenco Prodotti", Icon(FontAwesomeIcons.cheese)),
+        DrawerMenuItem(MENU_ADMIN_CAT_PRODOTTI, "Categorie Prodotti",
+            Icon(FontAwesomeIcons.typo3)),
+        DrawerMenuItem(MENU_ADMIN_LISTINI, "Listini Prezzo",
+            Icon(FontAwesomeIcons.basketShopping)),
+        DrawerMenuDivider(null, "Gestione Utenti e Punti Vendita", Colors.pink),
         DrawerMenuItem(
             MENU_ADMIN_UTENTI, "Gestione Utenti", Icon(FontAwesomeIcons.users)),
-        DrawerMenuItem(MENU_ADMIN_LISTINI, "Listini",
-            Icon(FontAwesomeIcons.basketShopping)),
-        DrawerMenuItem(
-            MENU_ADMIN_PRODOTTI, "Prodotti", Icon(FontAwesomeIcons.cheese)),
         DrawerMenuItem(MENU_ADMIN_PUNTI_VENDITA, "Punti Vendita",
             Icon(FontAwesomeIcons.store)),
       ];
@@ -265,7 +328,7 @@ class _HomeAdminState extends State<HomeAdmin> {
               onPressed: () => Navigator.of(context).pop(false),
               child: Text("NO")),
           TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => _closeApp(),
               child: Text("SI")),
         ],
       ),
@@ -340,6 +403,163 @@ class _HomeAdminState extends State<HomeAdmin> {
           _selectedPage = _getDrawerItemWidget(_selectedItem);
         });
         break;
+    }
+  }
+
+  void registerNotification() async {
+    // 1. Initialize the Firebase app
+    await Firebase.initializeApp();
+
+    // 2. Instantiate Firebase Messaging
+    _messaging = FirebaseMessaging.instance;
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // 3. On iOS, this helps to take the user permissions
+    NotificationSettings settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+      // TODO: handle the received notifications
+    } else {
+      print('User declined or has not accepted permission');
+    }
+  }
+  Future _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    print("Handling a background message: ${message.messageId}");
+  }
+
+  void firebaseCloudMessagingListeners() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage event) {
+      debugPrint("message recieved");
+      debugPrint(event.notification!.title);
+      debugPrint(event.notification!.body);
+      if (event.notification != null) {
+        print('Message also contained a notification: ${event.notification}');
+      }
+      showNotificationDialog(event.notification);
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      debugPrint('Message clicked!');
+      debugPrint(message.notification!.title);
+      debugPrint(message.notification!.body);
+      showNotificationDialog(message.notification);
+    });
+
+    // _firebaseMessaging.requestPermission(
+    //     sound: true, badge: true, alert: true, provisional: false);
+
+    _firebaseMessaging.requestPermission(
+        sound: true,
+        badge: true,
+        alert: true,
+        provisional: false,
+        announcement: false,
+        carPlay: false,
+        criticalAlert: false );
+    _checkForFirebaseInitialMessage();
+  }
+
+  void _checkForFirebaseInitialMessage() async {
+    await Firebase.initializeApp();
+    RemoteMessage? initialMessage =
+    await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      showNotificationDialog(initialMessage.notification);
+    }
+  }
+
+  void showNotificationDialog(RemoteNotification? notification) async {
+    String? title = notification?.title;
+    String? body = notification?.body;
+    await showDialog<String>(
+        barrierDismissible: false,
+        context: context,
+        builder: (BuildContext context) {
+          return  WillPopScope(
+              onWillPop: null,
+//              child: CustomDialog(buttonText: "OK",description: body,title: title,image: FarmacoIcons.presVetIcon),
+              child:  AlertDialog(
+                title: Text("ATTENZIONE"),
+                content: Container(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "$title",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 20.0),
+                      ),
+                      const SizedBox(
+                        height: 20.0,
+                      ),
+                      Text("$body")
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all<EdgeInsets>(
+                            EdgeInsets.all(15)),
+                      ),
+                      child: Text("OK"),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      })
+                ],
+              ));
+        });
+  }
+
+  void showMessage(String message) {
+    final snackbar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(scaffoldKey.currentContext!).showSnackBar(snackbar);
+  }
+
+  manageFirebaseToken() async {
+
+    String? token = await _firebaseMessaging.getToken();
+    debugPrint("FCM TOKEN = $token");
+    //call store procedure in supabase "update_fcm_key"
+    String? deviceId = await PlatformDeviceId.getDeviceId;
+    Map<String,dynamic> mapInfo = await AppUtils.getDeviceInfo();
+
+    Map<String,String?> parameters = {'key':token,'device':deviceId};
+    String? puntovendita = '${_utente!.puntoVendita}';
+    String? info = mapInfo.toString();
+
+    //chiamo la funzione sul db che salva per il token nella tabella 'store_fcm_user_keys'
+    final res= await supabase.rpc('store_fcm_user_keys',params:{ 'email': _utente!.email,'key': token, 'device': deviceId, 'puntovendita': null, 'info':'staminchia' });
+
+
+    res;
+
+    fcmToken = await AppUtils.retrieveFcmToken();
+    if (token == fcmToken) {
+      debugPrint("FCM TOKEN = $token");
+    } else {
+      AppUtils.storeFcmToken(token!);
+
+      debugPrint("FCM TOKEN = $token");
+    }
+
+    setState(() {
+      this.fcmToken = token;
+    });
+  }
+
+  void _closeApp() {
+    if (Platform.isAndroid) {
+      SystemNavigator.pop();
+    } else if (Platform.isIOS) {
+      exit(0);
     }
   }
 }
