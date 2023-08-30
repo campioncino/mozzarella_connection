@@ -10,3 +10,9 @@ A few resources to get you started:
 
 - [What is supabase? ](https://supabase.com/docs)
 - [supabase flutter package](https://pub.dev/packages/supabase_flutter)
+
+
+Mancano i seguenti files contenenti le chiavi d'utilizzo
+- [firebase_options.dart]  
+- [.env.release]
+- [serviceAccountKey.json] per la funzione push
