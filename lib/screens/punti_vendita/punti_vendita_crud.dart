@@ -18,6 +18,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/app_utils.dart';
 import '../../utils/ensure_visibility_textformfield.dart';
 import '../../utils/menu_choice.dart';
+import '../../utils/ui_icons.dart';
 
 class PuntiVenditaCrud extends StatefulWidget {
   final PuntoVendita? puntoVendita;
@@ -205,7 +206,7 @@ class _PuntiVenditaCrudState extends State<PuntiVenditaCrud> {
           ),
           floatingActionButton: FloatingActionButton(
             elevation: 0.0,
-            child: const Icon(Icons.save_rounded),
+            child:  UiIcons.save,
             // backgroundColor: const Color(0xFFE57373),
             onPressed: _validateInputs,
           )),
@@ -394,7 +395,7 @@ class _PuntiVenditaCrudState extends State<PuntiVenditaCrud> {
             children: [
               Expanded(child: Text("Fattura",style: TextStyle( color: Colors.green[900]),)),
               Switch(
-                value: _flFattura!,
+                value: _flFattura,
                 onChanged: (bool value) {
                   setState(() {
                     _flFattura = value;
@@ -407,7 +408,7 @@ class _PuntiVenditaCrudState extends State<PuntiVenditaCrud> {
             children: [
               Expanded(child: Text("Ricevuta Fiscale",style: TextStyle( color: Colors.green[900]),)),
               Switch(
-                value: _flRicevuta!,
+                value: _flRicevuta,
                 onChanged: (bool value) {
                   setState(() {
                     _flRicevuta = value;
@@ -478,8 +479,13 @@ class _PuntiVenditaCrudState extends State<PuntiVenditaCrud> {
       } else {
         _puntoVendita!.catId = int.parse(_catIdController!.text);
       }
-      _puntoVendita!.flFattura = _flFattura;
-      _puntoVendita!.flRicevuta = _flRicevuta;
+      if(!_flFattura&&!_flRicevuta){
+        return  AppUtils.errorSnackBar(_scaffoldKey, "Selezionare una tipologia di pagamento");
+      }else{
+        _puntoVendita!.flFattura = _flFattura;
+        _puntoVendita!.flRicevuta = _flRicevuta;
+      }
+
       _onSavePuntoVendita(context, _puntoVendita!);
     }
   }

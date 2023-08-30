@@ -25,7 +25,8 @@ Ordine _$OrdineFromJson(Map<String, dynamic> json) => Ordine()
   ..note = json['note'] as String?
   ..total = json['total'] as num?
   ..numero = json['numero'] as num?
-  ..tipoFiscaleCodice = json['tipo_fiscale_codice'] as String?;
+  ..tipoFiscaleCodice = json['tipo_fiscale_codice'] as String?
+  ..modifiedAt = json['modified_at'] as String?;
 
 Map<String, dynamic> _$OrdineToJson(Ordine instance) {
   final val = <String, dynamic>{};
@@ -53,5 +54,6 @@ Map<String, dynamic> _$OrdineToJson(Ordine instance) {
   writeNotNull('total', instance.total);
   writeNotNull('numero', instance.numero);
   writeNotNull('tipo_fiscale_codice', instance.tipoFiscaleCodice);
+  writeNotNull('modified_at', instance.modifiedAt);
   return val;
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:bufalabuona/data/report_produzione_rest_service.dart';
 import 'package:bufalabuona/model/report_produzione.dart';
+import 'package:bufalabuona/model/report_produzione_casaro_json_data.dart';
 import 'package:bufalabuona/model/report_produzione_json_data.dart';
 import 'package:bufalabuona/pdf/pdf_api.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
@@ -18,7 +19,6 @@ class PdfReportApi {
     final font = await rootBundle.load("assets/fonts/open_sans_regular.ttf");
     final ttf = Font.ttf(font);
     final pdf = Document();
-    // String? logo = await rootBundle.loadString('assets/images/bbc.svg');
     pdf.addPage(
         MultiPage(
           theme: ThemeData.withFont(
@@ -126,24 +126,22 @@ class PdfReportApi {
 
   static Widget buildInvoice(ReportProduzione report,List listProds) {
     final headers = [
-      'ID Prodotto',
-      'Codice',
       'Prodotto',
-      'Quantita',
-      'Descrizione'
+      'Dettaglio',
+      'KG',
+      'Pezzi'
     ];
 
-    List<ReportProduzioneJsonData> list = listProds
-        .map<ReportProduzioneJsonData>((f) => ReportProduzioneJsonData.fromJson(f))
+    List<ReportProduzioneCasaroJsonData> list = listProds
+        .map<ReportProduzioneCasaroJsonData>((f) => ReportProduzioneCasaroJsonData.fromJson(f))
         .toList();
 
     final data = list.map((item) {
       return [
-        item.prodId,
-        item.codice,
-        item.denominazione,
-        '${item.sumToDeliver} (${item.unimisCodice})',
-        item.descrizione,
+        item.tipProdDescrizione,
+        item.dettaglio,
+        '${item.totale!/1000}',
+        '${(item.totale!/item.qtaProduzione!).ceil()}'
       ];
     }).toList();
 
@@ -164,6 +162,46 @@ class PdfReportApi {
       },
     );
   }
+  // static Widget buildInvoice(ReportProduzione report,List listProds) {
+  //   final headers = [
+  //     'ID Prodotto',
+  //     'Codice',
+  //     'Prodotto',
+  //     'Quantita',
+  //     'Descrizione'
+  //   ];
+  //
+  //   List<ReportProduzioneJsonData> list = listProds
+  //       .map<ReportProduzioneJsonData>((f) => ReportProduzioneJsonData.fromJson(f))
+  //       .toList();
+  //
+  //   final data = list.map((item) {
+  //     return [
+  //       item.prodId,
+  //       item.codice,
+  //       item.denominazione,
+  //       '${item.sumToDeliver} (${item.unimisCodice})',
+  //       item.descrizione,
+  //     ];
+  //   }).toList();
+  //
+  //
+  //   return Table.fromTextArray(
+  //     headers: headers,
+  //     data: data,
+  //     border: null,
+  //     headerStyle: TextStyle(fontWeight: FontWeight.bold),
+  //     headerDecoration: BoxDecoration(color: PdfColors.grey300),
+  //     cellHeight: 30,
+  //     cellAlignments: {
+  //       0: Alignment.centerLeft,
+  //       1: Alignment.centerRight,
+  //       2: Alignment.centerRight,
+  //       3: Alignment.centerRight,
+  //       4: Alignment.centerRight,
+  //     },
+  //   );
+  // }
 
 
   static Widget buildFooter(ReportProduzione invoice) => Column(

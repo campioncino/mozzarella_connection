@@ -1,6 +1,7 @@
 import 'package:bufalabuona/main.dart';
 import 'package:bufalabuona/model/utente.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
+import 'package:bufalabuona/utils/ui_colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -9,6 +10,7 @@ import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../utils/ui_icons.dart';
 import '/components/auth_required_state.dart';
 
 
@@ -36,14 +38,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _user;
   bool loadingProfile = true;
   bool isValid=false;
-  String _appBarTitle = 'Profilo';
+  String _appBarTitle = 'Modifica Impostazioni';
   TextEditingController? _usernameController;
   TextEditingController? _phoneNumberController ;
   TextEditingController? _fullNameController ;
+  TextEditingController? _passwordController;
+  TextEditingController _emailController = new TextEditingController();
   String? _email;
   String? _username;
   String? _phoneNumber;
   String? _fullName;
+  String? _password;
+
+  bool _obscureText = true;
+  Icon _eyeIcon = UiIcons.eyeSlash;
+
+
   Map<String?, dynamic>? _options;
 
   var now = new DateTime.now();
@@ -56,6 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _options = this.widget.options;
+    _scroll =  new ScrollController();
     initUtente();
   }
 
@@ -74,29 +85,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if(_options!=null){
       _options = this.widget.options;
+
       if(_options!['utente']!=null){
+        _options!['route']='PROFILE';
         _utente = _options!['utente'];
         loadingProfile=false;
+        _password = await AppUtils.retrievePassword();
       }
       else{
         _loadProfile(_user!.id);
       }
     }else{
       debugPrint("qua non ci dovrei manco passare");
-      // _utente= await _loadUtente(user!.id);
     }
     initProfile();
   }
 
-  initProfile(){
-    setState(() {
-        _email = _utente!.email;
+  initProfile() {
+    setState(()  {
+      _email = _utente!.email;
       _username = _utente!.username;
       _phoneNumber = _utente!.phoneNumber;
       _fullName = _utente!.name;
       _usernameController = new TextEditingController(text: _username  );
       _phoneNumberController = new TextEditingController(text: _phoneNumber);
       _fullNameController = new TextEditingController(text: _fullName);
+      _passwordController = new TextEditingController(text: _password);
+      _emailController = new TextEditingController(text: _email);
     });
   }
 
@@ -228,7 +243,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (loadingProfile) {
       return Scaffold(
         appBar: AppBar(
-          title: _utente!.ruolo =='admin' ? null :Text(_appBarTitle),
+          iconTheme: IconThemeData(
+              color: Colors.white
+          ),
+          backgroundColor: UiColors.PRIMARY,
+          title: _utente!.ruolo =='admin' ? null :Text(_appBarTitle,style: TextStyle(color: Colors.white)),
         ),
         body: SizedBox(
           height: MediaQuery.of(context).size.height / 1.3,
@@ -240,26 +259,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       return Scaffold(
         key: scaffoldKey,
-        resizeToAvoidBottomInset: false,
         appBar:  AppBar(
-          title: _utente!.ruolo =='admin' ? null : Text(_appBarTitle),
-        ) ,
-        body: Container(
-          child: SingleChildScrollView(
-            controller: _scroll ,
-            child: Column(
-              children: [
-                SizedBox(height: 10,),
-                // AvatarContainer(
-                //   url: _avatarUrl ?? '',
-                //   onUpdatePressed: (){},
-                //   //onUpdatePressed: () => _updateAvatar(context),
-                //   key: Key(_avatarKey ?? ''),
-                // ),
-                formFields(),
-              ],
-            ),
+          iconTheme: IconThemeData(
+              color: Colors.white
           ),
+          backgroundColor: UiColors.PRIMARY,
+          title: _utente!.ruolo =='admin' ? null : Text(_appBarTitle,style: TextStyle(color: Colors.white)),
+        ) ,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              // height: MediaQuery.of(context).size.height/10*2,
+              height: 100,
+              color: UiColors.PRIMARY,
+              child: Align(
+                alignment:Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18.0,18,18,10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      UiIcons.editProfile,
+                      SizedBox(height: 22,),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal:18.0,vertical: 18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text("${AppUtils.utente.name}",style: TextStyle(color: Colors.white,fontSize: 22,fontWeight: FontWeight.w800),maxLines: 3,),
+                          ],
+                        ),
+                      ),                        ],
+                  ),
+                ),
+              ),),
+             Expanded(
+               child: SingleChildScrollView(
+                 controller: _scroll,
+                 child: Column(
+                  children: [
+                    // SizedBox(height: 10,),
+                    formFields(),
+                    ListTile(title: Text("Cambia Password",style: TextStyle(color: Colors.black45),),trailing: IconButton(icon: UiIcons.chevronRight,
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/profile/changePassword',arguments: _options);
+                        },),),
+                    ListTile(title: Text("Cambia Utente",style: TextStyle(color: Colors.purple[300]),),trailing: IconButton(icon: UiIcons.chevronRight,
+                      onPressed: ()=> _onSignOutPress(context),),),
+                    SizedBox(height: 15,),
+                    RoundedLoadingButton(
+                      borderRadius: 15,
+                      color: Colors.green,
+                      controller: _updateProfileBtnController,
+                      onPressed: () {
+                        // _onUpdateProfilePress(context);
+                        _validateInputs();
+                      },
+                      child: const Text('Salva Modifiche',
+                          style: TextStyle(fontSize: 20, color: Colors.white)),
+                    ),
+                  ],
+                  ),
+               ),
+             ),
+
+
+
+          ],
         ),
       );
     }
@@ -279,99 +349,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 Widget formFields(){
   return Padding(
-    padding: const EdgeInsets.all(20.0),
-    child: Row(
-      children: [
-        Expanded(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
+    padding:  EdgeInsets.all(20.0),
+    child: SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
             TextFormField(
               enabled: false,
-              initialValue: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Email',
+                labelStyle: TextStyle(
+                  color: Colors.green[800],
+                  fontSize: 18.0,
+                ),
+              ),
+              controller: _emailController,
+            ),
+            TextFormField(
+              enabled: false,
+              decoration: InputDecoration(
+                    labelText: 'Username',
+                    labelStyle: TextStyle(
+                      color: Colors.green[900],
+                      fontSize: 18.0,
+                    ),
+                  ),
+                  keyboardType: TextInputType.text,
+                  controller: _usernameController,
+                  // focusNode: _focusNodeUsernameController,
+                  validator: _validateMinLength,
+                  onSaved: (val) => _username = val,
+                ),
+            TextFormField(
+              readOnly: true,
+              obscuringCharacter: '*',
+              obscureText: _obscureText,
+              controller: _passwordController,
+              decoration:  InputDecoration(
+                labelText: 'Password',
+                labelStyle: TextStyle(
+                  color: Colors.green[900],
+                  fontSize: 18.0,
+                ),
+                suffixIcon: new IconButton(
+                    icon: _eyeIcon, iconSize: 18.0, onPressed: _toggle),
               ),
             ),
-               TextFormField(
-                 enabled: false,
-                      decoration: InputDecoration(
-                        labelText: 'Username',
-                        labelStyle: TextStyle(
-                          fontSize: 18.0,
-                        ),
-                      ),
-                      keyboardType: TextInputType.text,
-                      controller: _usernameController,
-                      // focusNode: _focusNodeUsernameController,
-                      validator: _validateMinLength,
-                      onSaved: (val) => _username = val,
-                    ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Nome e Cognome',
-                    labelStyle: TextStyle(
-                      fontSize: 18.0,
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  controller: _fullNameController,
-                  // focusNode: _focusNodeFullNameController,
-                  validator: _validateString,
-                  onSaved: (val) => _fullName = val,
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Nome e Cognome',
+                labelStyle: TextStyle(
+                  color: Colors.green[900],
+                  fontSize: 18.0,
                 ),
+              ),
+              keyboardType: TextInputType.text,
+              controller: _fullNameController,
+              // focusNode: _focusNodeFullNameController,
+              validator: _validateString,
+              onSaved: (val) => _fullName = val,
+            ),
 
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Numero Telefonico',
-                    labelStyle: TextStyle(
-                      fontSize: 18.0,
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  controller: _phoneNumberController,
-                  // focusNode: _focusNodePhoneNumberController,
-                  validator: _validateString,
-                  onSaved: (val) => _phoneNumber = val,
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Numero Telefonico',
+                labelStyle: TextStyle(
+                  color: Colors.green[900],
+                  fontSize: 18.0,
                 ),
+              ),
+              keyboardType: TextInputType.text,
+              controller: _phoneNumberController,
+              // focusNode: _focusNodePhoneNumberController,
+              validator: _validateString,
+              onSaved: (val) => _phoneNumber = val,
+            ),
 
+          // const SizedBox(
+          //   height: 5.0,
+          // ),
 
-              const SizedBox(
-                height: 35.0,
-              ),
-              RoundedLoadingButton(
-                borderRadius: 15,
-                color: Colors.green,
-                controller: _updateProfileBtnController,
-                onPressed: () {
-                  // _onUpdateProfilePress(context);
-                  _validateInputs();
-                },
-                child: const Text('Aggiorna Profilo',
-                    style: TextStyle(fontSize: 20, color: Colors.white)),
-              ),
-              TextButton(
-                onPressed: () {
-                   Navigator.pushNamed(context, '/profile/changePassword',arguments: _options);
-                },
-                child: const Text("Cambia password"),
-              ),
-              RoundedLoadingButton(
-                borderRadius: 15,
-                color: Colors.red,
-                controller: _signOutBtnController,
-                onPressed: () {
-                  _onSignOutPress(context);
-                },
-                child: const Text('Cambia utente',
-                    style: TextStyle(fontSize: 20, color: Colors.white)),
-              ),
-            ],),
-          ),
-        ),
-      ],
+        ],),
+      ),
     ),
   );
 }
@@ -395,6 +457,14 @@ Widget formFields(){
     }
   }
 
+  void _toggle() {
+    setState(() {
+      _obscureText = !_obscureText;
+      _obscureText
+          ? _eyeIcon = UiIcons.eyeSlash
+          : _eyeIcon = UiIcons.eye;
+    });
+  }
 
 }
 // class AvatarContainer extends StatefulWidget {
@@ -436,7 +506,7 @@ Widget formFields(){
 //         loadingImage = false;
 //       });
 //     } else {
-//       print(response.error!.message);
+//       debugPrint(response.error!.message);
 //       setState(() {
 //         loadingImage = false;
 //       });

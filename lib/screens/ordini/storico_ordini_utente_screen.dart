@@ -11,6 +11,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
+import '../../utils/ui_icons.dart';
+
 
 class StoricoOrdiniScreen extends StatefulWidget {
   final PuntoVendita puntoVendita;
@@ -47,7 +49,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<OrdineExt> list = _values!.where((v) {
@@ -114,7 +116,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
               child: stackWidget()),
         //   floatingActionButton: FloatingActionButton(
         //   elevation: 0.0,
-        //   child:  const Icon(Icons.add),
+        //   child:  const Icon(UiIcons.addIco),
         //   // backgroundColor: const Color(0xFFE57373),
         //   onPressed: _goToInsert
         // ),
@@ -198,7 +200,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
                 child: InkWell(
                   onTap: ()=> _goToDetail(ordine),
                   child: ListTile(
-                    trailing: Icon(Icons.chevron_right),
+                    trailing: UiIcons.chevronRight,
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -259,7 +261,7 @@ class _StoricoOrdiniScreenState extends State<StoricoOrdiniScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Numero",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

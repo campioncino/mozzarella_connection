@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/punti_vendita_rest_service.dart';
 import '../../main.dart';
 import '../../model/prodotto.dart';
+import '../../utils/ui_icons.dart';
 
 
 class ProdottiScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _ProdottiScreenState extends State<ProdottiScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<Prodotto> list = _values!.where((v) {
@@ -114,7 +115,7 @@ class _ProdottiScreenState extends State<ProdottiScreen> {
               child: stackWidget()),
           floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child:  const Icon(Icons.add),
+          child:   Icon(UiIcons.addIco),
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _goToInsert
       ),
@@ -211,14 +212,13 @@ class _ProdottiScreenState extends State<ProdottiScreen> {
                         : null,
                     width: double.infinity,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0,vertical: 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(prodotto.codice!),
                           Text(prodotto.denominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
                           Text(prodotto.descrizione?? ''),
-                          Text(prodotto.codice!),
-                          SizedBox(height: 15,),
                           Text("${prodotto.quantita} ${prodotto.unimisCodice}"),
                           //TODO inserire dettaglio tipologia punto vendita (market, risto)
                         ],
@@ -273,7 +273,7 @@ class _ProdottiScreenState extends State<ProdottiScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

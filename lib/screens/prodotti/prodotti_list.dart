@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../utils/ui_icons.dart';
+
 class ProdottiList extends StatefulWidget {
   const ProdottiList({Key? key}) : super(key: key);
 
@@ -32,7 +34,7 @@ class _ProdottiListState extends State<ProdottiList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: ListTile(title: Text('Prodotti'),leading: Icon(Icons.co2))),
+      appBar: AppBar(title: ListTile(title: Text('Prodotti'),leading: UiIcons.prodottiCo2)),
       body: Padding(
         padding: const EdgeInsets.only(left: 10, top: 15, right: 10),
         child: (dashList!=null && dashList!.isNotEmpty)

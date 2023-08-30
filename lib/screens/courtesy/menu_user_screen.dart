@@ -1,4 +1,4 @@
-import 'dart:ffi';
+// import 'dart:ffi';
 
 import 'package:bufalabuona/data/cart_item_rest_service.dart';
 import 'package:bufalabuona/data/listini_prodotti_rest_service.dart';
@@ -15,9 +15,11 @@ import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
-import '../clienti/home.dart';
+import '../../utils/ui_icons.dart';
+import '../home_clienti/home.dart';
 
 class MenuUserScreen extends StatefulWidget {
 
@@ -42,15 +44,23 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
   final TextEditingController _storicoOrdini= new TextEditingController(text: "Visualizza lo storico ordiini");
   final TextEditingController _accountController= new TextEditingController(text: "Modifica Acccount");
   final TextEditingController _latOrderController= new TextEditingController(text: "Ripeti Ultimo Ordine");
-
+  String appVersion = '';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
    _isLoading=false;
+   init();
   }
 
+  init() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = '${packageInfo.version}-${packageInfo.buildNumber}';
+    });
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,22 +99,29 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
             Container(
               child: Align(alignment:Alignment.bottomLeft,child: Padding(
                 padding: const EdgeInsets.fromLTRB(18.0,18,18,10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(FontAwesomeIcons.solidCircleUser,size: 66,color: Colors.white,),
-                    SizedBox(width: 22,),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Text("Ciao ,",style: TextStyle(color: Colors.white,fontSize: 22),),
-                          Text("${AppUtils.utente.name}!",style: TextStyle(color: Colors.white,fontSize: 22,fontWeight: FontWeight.w800),maxLines: 3,),
-                        ],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(UiIcons.circleUserIco,size: 66,color: Colors.white,),
+                        SizedBox(width: 22,),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text("Ciao,",style: TextStyle(color: Colors.white,fontSize: 22),),
+                              Text("${AppUtils.utente.name}!",style: TextStyle(color: Colors.white,fontSize: 22,fontWeight: FontWeight.w800),maxLines: 3,),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
+                    Align(child: Text("BufalaBuona v:${appVersion}",style:TextStyle(color: Colors.white,fontSize: 16,fontStyle: FontStyle.normal)),alignment: Alignment.bottomRight,)
+
                   ],
                 ),
               )),
@@ -131,16 +148,19 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
           // color: Color(0xFF3BBAD5),
           // color:Colors.lightBlue[300],
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.boxArchive,color: Colors.black54,size: 36,),
+          child: ListTile(leading: UiIcons.boxArchive,
               title: TextFormField(
+                  style: TextStyle(color:Colors.black45,fontWeight: FontWeight.w500),
                 maxLines: 2,
                 controller: _storicoOrdini,
                 decoration: InputDecoration(
                     disabledBorder: InputBorder.none,
                     labelText: "Storico Ordini",
-                enabled: false,
+                  labelStyle: TextStyle(fontSize: 24,fontWeight: FontWeight.w800,color: Colors.black54),
+
+                  enabled: false,
               )),
-              trailing: IconButton(icon: Icon(Icons.chevron_right,color: Colors.black54,),
+              trailing: IconButton(icon: UiIcons.chevronRight,
                   onPressed: _goStorico
               )
           ),
@@ -157,16 +177,18 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
           // color: Color(0xFF3BBAD5),
           // color:Colors.lightBlue[300],
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.userGear,color: Colors.black54,size: 36,),
+          child: ListTile(leading: UiIcons.userGear,
               title: TextFormField(
+                  style: TextStyle(color:Colors.black45,fontWeight: FontWeight.w500),
                   maxLines: 2,
                   controller: _accountController,
                   decoration: InputDecoration(
                     disabledBorder: InputBorder.none,
                     labelText: "Impostazioni",
+                    labelStyle: TextStyle(fontSize: 24,fontWeight: FontWeight.w800,color: Colors.black54),
                     enabled: false,
                   )),
-              trailing: IconButton(icon: Icon(Icons.chevron_right,color: Colors.black54,),
+              trailing: IconButton(icon: UiIcons.chevronRight,
                   onPressed: _goToProfile
               )
           ),
@@ -183,16 +205,18 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
           // color: Color(0xFF3BBAD5),
           // color:Colors.lightBlue[300],
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.repeat,color: Colors.black54,size: 36,),
+          child: ListTile(leading: UiIcons.repeat,
               title: TextFormField(
+                  style: TextStyle(color:Colors.black45,fontWeight: FontWeight.w500),
                   maxLines: 2,
                   controller: _latOrderController,
                   decoration: InputDecoration(
                     disabledBorder: InputBorder.none,
                     labelText: "Ordine Veloce",
+                    labelStyle: TextStyle(fontSize: 24,fontWeight: FontWeight.w800,color: Colors.black54),
                     enabled: false,
                   )),
-              trailing: IconButton(icon: Icon(Icons.chevron_right,color: Colors.black54,),
+              trailing: IconButton(icon: UiIcons.chevronRight,
                   onPressed:()=> _repeatLastOrder(AppUtils.puntoVendita)
               )
           ),
@@ -209,6 +233,7 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
   }
 
   void _goToProfile(){
+
     Navigator.push(context, MaterialPageRoute(builder: (context)=> ProfileScreen(options: this.widget.options,)));
   }
 
@@ -247,8 +272,8 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
 
   Future<OrdineExt?> getLastOrdine(PuntoVendita p) async {
     OrdineExt? result;
-    WSResponse resp = await OrdiniRestService.internal(context).getOrdiniByPuntoVenditaId(p!.id);
-    if(resp.success!= null && resp.success!){
+    WSResponse resp = await OrdiniRestService.internal(context).getOrdiniByPuntoVenditaId(p.id);
+    if(resp.success!= null && resp.success! && resp.data!.isNotEmpty){
       setState((){
         List<OrdineExt> _values = OrdiniRestService.internal(context).parseListExt(resp.data!.toList());
        result =_values.first;
@@ -263,7 +288,7 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
   Future<List<CartItemExt>?> getItemsFromOrdine(OrdineExt? o) async {
     List<CartItemExt>? result;
     WSResponse resp = await CartItemRestService.internal(context).getCartItemByOrdineId(o!.id!);
-    if(resp.success!= null && resp.success!){
+    if(resp.success!= null && resp.success! && resp.data!.isNotEmpty){
       setState((){
         result = CartItemRestService.internal(context).parseListExt(resp.data!.toList());
       });
@@ -292,7 +317,7 @@ class _MenuUserScreenState extends State<MenuUserScreen> {
     Map<String,dynamic>? options = new Map();
     options['utente']=AppUtils.utente;
     options['puntoVendita']=AppUtils.puntoVendita;
-    options['route']= 'PRODOTTI';
+    options['route']= 'CARRELLO';
     Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false, arguments: options);
   }
 }

@@ -18,6 +18,7 @@ import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/listini_rest_service.dart';
+import '../../utils/ui_icons.dart';
 
 
 class ListiniScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<Listino> list = _values!.where((v) {
@@ -114,7 +115,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
 
       floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child:  const Icon(Icons.add),
+          child:   Icon(UiIcons.addIco),
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _goToInsert
       ),
@@ -167,7 +168,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,UiIcons.userSlash);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -274,7 +275,7 @@ class _ListiniScreenState extends State<ListiniScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

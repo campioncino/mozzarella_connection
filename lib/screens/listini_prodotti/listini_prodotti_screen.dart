@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
+import '../../utils/ui_icons.dart';
+
 class ListiniProdottiScreen extends StatefulWidget {
   final Listino? listino;
   final bool lovMode;
@@ -59,7 +61,7 @@ class _ListiniProdottiScreenState extends State<ListiniProdottiScreen> {
           title: Text(_listino?.descrizione ?? 'Nuovo Listino'),
           actions: <Widget>[
             IconButton(
-              icon: Icon(FontAwesomeIcons.pencil),
+              icon: UiIcons.pencil,
               onPressed: () => _editListino(context,_listino),
             ),
           ],
@@ -71,7 +73,7 @@ class _ListiniProdottiScreenState extends State<ListiniProdottiScreen> {
 
         // floatingActionButton: FloatingActionButton(
         //     elevation: 0.0,
-        //     child:  const Icon(Icons.add),
+        //     child:  const Icon(UiIcons.addIco),
         //     // backgroundColor: const Color(0xFFE57373),
         //     onPressed: _goToInsert
         // ),
@@ -109,7 +111,7 @@ class _ListiniProdottiScreenState extends State<ListiniProdottiScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,

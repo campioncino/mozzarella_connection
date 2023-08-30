@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../utils/ui_icons.dart';
+
 class OrdineDettaglioScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
   final Ordine? ordine;
@@ -102,7 +104,7 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
     );
 
     listWidgets.add(p);
-    return new Stack(children: listWidgets);
+    return  Stack(children: listWidgets);
   }
 
   Widget body() {
@@ -123,7 +125,7 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
       return AppUtils.loader(context);
     }
     if (this._values.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         itemCount: _values.length,
@@ -139,6 +141,71 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
     _values.clear();
     readData();
   }
+
+  // Widget _buildChildRow(BuildContext context, CartItemExt listini, int position){
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     mainAxisAlignment: MainAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Flexible(
+  //             flex: 8,
+  //             child: Card(
+  //               margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
+  //               elevation: 1.0,
+  //               child: InkWell(
+  //                 // onTap: ()=> _goToEdit(listini),
+  //                 child: Container(
+  //                   width: double.infinity,
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.fromLTRB( 15.0,10,15,10),
+  //                     child: Row(
+  //                       children: [
+  //                         Text(listini.quantita.toString(),style: TextStyle(fontSize: 30),),
+  //                         Text(" x ",style: TextStyle(fontSize: 18),),
+  //                       SizedBox(width: 20,),
+  //                       Expanded(
+  //                         child: Column(
+  //                               crossAxisAlignment: CrossAxisAlignment.start,
+  //                               children: [
+  //                                 Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+  //                                 // Text(listini.prodDescrizione ?? ''),
+  //                                 Text("${listini.price.toString()} € / ${listini.prodUnimisCodice}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16),),
+  //                                 Text("${listini.status??''}"),
+  //                               ],
+  //                             ),
+  //                       ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           Expanded(
+  //             flex: 2,
+  //             child: Padding(
+  //               padding: const EdgeInsets.fromLTRB(0,10,7,10),
+  //               child: FittedBox(
+  //                   fit: BoxFit.fitWidth,
+  //                   child: Center(
+  //                     child: ConstrainedBox(
+  //                         constraints: const BoxConstraints(
+  //                           minWidth: 70,
+  //                           minHeight: 70,
+  //                           maxWidth: 150,
+  //                           maxHeight: 150,
+  //                         ),
+  //                         child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 20,color: Colors.teal[800],fontWeight: FontWeight.w700) ,)),
+  //                   )),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildChildRow(BuildContext context, CartItemExt listini, int position){
     return Column(
@@ -156,23 +223,40 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
                   child: Container(
                     width: double.infinity,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB( 15.0,10,15,10),
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       child: Row(
                         children: [
-                          Text(listini.quantita.toString(),style: TextStyle(fontSize: 30),),
-                          Text(" x ",style: TextStyle(fontSize: 18),),
-                        SizedBox(width: 20,),
-                        Expanded(
-                          child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                                  Text(listini.prodDescrizione ?? ''),
-                                  Text("${listini.price.toString()} € / ${listini.prodUnimisCodice}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16),),
-                                  Text("${listini.status??''}"),
-                                ],
-                              ),
-                        ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(listini.prodDenominazione?? '',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
+                                Text(listini.prodDescrizione ?? ''),
+                                Text("${listini.quantita} ${listini.prodUnimisDescrizione} "),
+                                Text("${listini.price.toString()} €",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 22,color: Colors.green),),
+                                Text("${listini.status??''}"),
+                              ],
+                            ),
+                          ),
+                          // Row(
+                          //   mainAxisAlignment:MainAxisAlignment.spaceBetween ,
+                          //   crossAxisAlignment: CrossAxisAlignment.center,
+                          //   children: [
+                          //     IconButton(icon: Container(
+                          //         decoration: BoxDecoration(
+                          //             borderRadius: BorderRadius.circular(100),
+                          //             border: Border.all(width: 2, color: Colors.green)),
+                          //         child: Icon(UiIcons.minusIco,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
+                          //     SizedBox(width: 10,),
+                          //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
+                          //     SizedBox(width: 10,),
+                          //     IconButton(icon: Container(
+                          //         decoration: BoxDecoration(
+                          //             borderRadius: BorderRadius.circular(100),
+                          //             border: Border.all(width: 2, color: Colors.green)),child: UiIcons.plus),onPressed: ()=>addElementToList(listini),)
+                          //
+                          //   ],
+                          // ),
                         ],
                       ),
                     ),
@@ -180,21 +264,18 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 24,color: Colors.green,fontWeight: FontWeight.w700) ,),
-            ),
           ],
         ),
       ],
     );
   }
 
+
+
   String _calcolaParzialeOrdine(CartItemExt listino){
-
-   return (listino.quantita! * listino.price!).toString();
-
+    return (listino.quantita! * double.parse(listino.price!.toStringAsFixed(2))).toStringAsFixed(2);
   }
+
 
   Widget riepilogoOrdineCard(){
     return Container(
@@ -276,7 +357,7 @@ class _OrdineDettaglioScreenState extends State<OrdineDettaglioScreen> {
       var price= value.price! * value.quantita!;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
    _submit() async {

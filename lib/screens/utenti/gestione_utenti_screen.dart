@@ -12,6 +12,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
+import '../../utils/ui_icons.dart';
+
 
 class GestioneUtentiScreen extends StatefulWidget {
   const GestioneUtentiScreen({Key? key}) : super(key: key);
@@ -43,7 +45,7 @@ class _GestioneUtentiScreenState extends State<GestioneUtentiScreen> {
     setState(() {
       if (text.isEmpty) {
          _filteredValues.clear();
-         print(_values.toString());
+         debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<Utente> list = _values!.where((v) {
@@ -153,7 +155,7 @@ class _GestioneUtentiScreenState extends State<GestioneUtentiScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,UiIcons.userSlash);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -254,7 +256,7 @@ class _GestioneUtentiScreenState extends State<GestioneUtentiScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome o Email",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

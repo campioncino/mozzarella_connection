@@ -10,6 +10,7 @@ import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
+import 'package:bufalabuona/utils/ui_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -144,7 +145,7 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       return AppUtils.loader(context);
     }
     if (this._values.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         itemCount: _values.length,
@@ -200,14 +201,14 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
                           //         decoration: BoxDecoration(
                           //             borderRadius: BorderRadius.circular(100),
                           //             border: Border.all(width: 2, color: Colors.green)),
-                          //         child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
+                          //         child: Icon(UiIcons.minusIco,size: 20,color: Colors.green,)),onPressed: ()=>removeElementToList(listini),),
                           //     SizedBox(width: 10,),
                           //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18),),
                           //     SizedBox(width: 10,),
                           //     IconButton(icon: Container(
                           //         decoration: BoxDecoration(
                           //             borderRadius: BorderRadius.circular(100),
-                          //             border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.green,)),onPressed: ()=>addElementToList(listini),)
+                          //             border: Border.all(width: 2, color: Colors.green)),child: UiIcons.plus),onPressed: ()=>addElementToList(listini),)
                           //
                           //   ],
                           // ),
@@ -229,9 +230,9 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
     return Container(
       color: Colors.teal[50],
       width: MediaQuery.of(context).size.width,
-      child: ListTile(leading: Icon(FontAwesomeIcons.locationDot,color: Colors.black54),
+      child: ListTile(leading: UiIcons.locationDot,
         title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-        trailing: IconButton(icon: Icon(FontAwesomeIcons.pencil),onPressed: (){},),
+        trailing: IconButton(icon: UiIcons.pencil,onPressed: (){},),
       ),
     );
   }
@@ -281,7 +282,7 @@ class _CarrelloDettaglioScreenState extends State<CarrelloDettaglioScreen> {
       var price= value.price! * value.quantita!;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
    _submit() async {

@@ -40,6 +40,9 @@ class Ordine extends WSResponse {
   num? numero;
   @JsonKey(name: 'tipo_fiscale_codice')
   String? tipoFiscaleCodice;
+  @JsonKey(name: 'modified_at')
+  String? modifiedAt;
+
 
   @override
   Ordine.fromDBMap(Map map) {
@@ -54,6 +57,7 @@ class Ordine extends WSResponse {
     this.indirizzoConsegna = map['indirizzo_consegna'];
     this.note = map['note'];
     this.tipoFiscaleCodice = map['tipo_fiscale_codice'];
+    this.modifiedAt = map['modified_at'];
   }
 
   Map<String, dynamic> tableMap() {
@@ -71,6 +75,7 @@ class Ordine extends WSResponse {
     map['indirizzo_consegna']=this.indirizzoConsegna;
     map['note'] = this.note;
     map['tipo_fiscale_codice'] = this.tipoFiscaleCodice;
+    map['modified_at']=this.modifiedAt;
     return map;
   }
 }

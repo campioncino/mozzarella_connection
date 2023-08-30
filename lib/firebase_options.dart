@@ -25,7 +25,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -44,40 +47,29 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDy9koGQ4-Oxq5oiaZyLBN3bHgJDNi0_Z4',
-    appId: '1:675275977106:web:64cb27a4a7f42fcc3b514b',
-    messagingSenderId: '675275977106',
-    projectId: 'mozzarella-connection-a8589',
-    authDomain: 'mozzarella-connection-a8589.firebaseapp.com',
-    storageBucket: 'mozzarella-connection-a8589.appspot.com',
-    measurementId: 'G-M99EMQ5ZFC',
+    apiKey: 'AIzaSyDPzakO2UtdgngDSetnYBJahuhA1gXCj54',
+    appId: '1:70115041987:web:4dc1c85fc0f664f3cfb876',
+    messagingSenderId: '70115041987',
+    projectId: 'bufalabuona',
+    authDomain: 'bufalabuona.firebaseapp.com',
+    storageBucket: 'bufalabuona.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDi-NSgPzN4W0a6bDuProGQ5Zw67T07k3M',
-    appId: '1:675275977106:android:3f5c8f0392f4343a3b514b',
-    messagingSenderId: '675275977106',
-    projectId: 'mozzarella-connection-a8589',
-    storageBucket: 'mozzarella-connection-a8589.appspot.com',
+    apiKey: 'AIzaSyDwecfsudZre_nlOkgNpZFyW_UvrW4GazM',
+    appId: '1:70115041987:android:d21683325db8a9d1cfb876',
+    messagingSenderId: '70115041987',
+    projectId: 'bufalabuona',
+    storageBucket: 'bufalabuona.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBWBEWcHjbjrbbv1VcJ_McLoK21rp3-G_I',
-    appId: '1:675275977106:ios:bae84797808141fa3b514b',
-    messagingSenderId: '675275977106',
-    projectId: 'mozzarella-connection-a8589',
-    storageBucket: 'mozzarella-connection-a8589.appspot.com',
-    iosClientId: '675275977106-0fhnl9lr00rhjh266kjlnm3nb7f2n2kb.apps.googleusercontent.com',
-    iosBundleId: 'com.aziendaagricoladangelo',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBWBEWcHjbjrbbv1VcJ_McLoK21rp3-G_I',
-    appId: '1:675275977106:ios:bae84797808141fa3b514b',
-    messagingSenderId: '675275977106',
-    projectId: 'mozzarella-connection-a8589',
-    storageBucket: 'mozzarella-connection-a8589.appspot.com',
-    iosClientId: '675275977106-0fhnl9lr00rhjh266kjlnm3nb7f2n2kb.apps.googleusercontent.com',
+    apiKey: 'AIzaSyCZKvfOXXEajupDGreagCZYOO3YvFiXzjo',
+    appId: '1:70115041987:ios:c4d196ea07557050cfb876',
+    messagingSenderId: '70115041987',
+    projectId: 'bufalabuona',
+    storageBucket: 'bufalabuona.appspot.com',
+    iosClientId: '70115041987-i243m8oclodkqiucqq3jsld57ke5fihm.apps.googleusercontent.com',
     iosBundleId: 'com.aziendaagricoladangelo',
   );
 }

@@ -19,6 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/app_utils.dart';
 import '../../utils/ensure_visibility_textformfield.dart';
 import '../../utils/menu_choice.dart';
+import '../../utils/ui_icons.dart';
 
 class GestioneUtentiCrud extends StatefulWidget {
   final Utente? utente;
@@ -165,7 +166,7 @@ class _GestioneUtentiCrudState extends State<GestioneUtentiCrud> {
           ),
           floatingActionButton: FloatingActionButton(
             elevation: 0.0,
-            child: const Icon(Icons.save_rounded),
+            child:  UiIcons.save,
             onPressed: _validateInputs,
           )),
     );
@@ -452,7 +453,7 @@ class _GestioneUtentiCrudState extends State<GestioneUtentiCrud> {
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Icon(FontAwesomeIcons.circleUser,size: 44,),
+          child: Icon(UiIcons.circleUserIco,size: 44,),
         ),
       Expanded(child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18.0,vertical: 5),
@@ -468,7 +469,7 @@ class _GestioneUtentiCrudState extends State<GestioneUtentiCrud> {
           ],
         ),
       )),
-        IconButton(onPressed: _editPersonalInformation, icon: Icon(FontAwesomeIcons.pencil))
+        IconButton(onPressed: _editPersonalInformation, icon: UiIcons.pencil)
       ]
       ));
   }

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/categorie_prodotti_rest_service.dart';
 import '../../model/categoria_prodotto.dart';
+import '../../utils/ui_icons.dart';
 import 'categorie_prodotti_crud.dart';
 
 
@@ -42,7 +43,7 @@ class _CategorieProdottiScreenState extends State<CategorieProdottiScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<CategoriaProdotto> list = _values!.where((v) {
@@ -105,7 +106,7 @@ class _CategorieProdottiScreenState extends State<CategorieProdottiScreen> {
 
       floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child:  const Icon(Icons.add),
+          child:   Icon(UiIcons.addIco),
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _goToInsert
       ),
@@ -242,7 +243,7 @@ class _CategorieProdottiScreenState extends State<CategorieProdottiScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

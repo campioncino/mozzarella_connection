@@ -17,6 +17,9 @@ import '../../utils/ensure_visibility_textformfield.dart';
 import '../../utils/menu_choice.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 
+import '../../utils/ui_icons.dart';
+import '../avatar.dart';
+
 class ProdottiCrud extends StatefulWidget {
   final Prodotto? prodotto;
   ProdottiCrud({this.prodotto});
@@ -77,7 +80,9 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
   bool _isAbilitato = true;
   bool _isLoading = false;
   bool _updateMode = false;
+  bool _isPictureEnable=false;
 
+  String? _avatarUrl;
   String imageUrl='https://stiyidpiphnxmmtmfutn.supabase.co/storage/v1/object/public/public-images/no_picture.png';
 
 
@@ -88,12 +93,14 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
     if (this.widget.prodotto != null) {
       _prodotto = this.widget.prodotto;
       _updateMode = true;
+      _isPictureEnable=true;
+      _avatarUrl=this.widget.prodotto!.imageUrl ;
     } else {
       _prodotto = new Prodotto();
     }
 
 
-    retrieveImage();
+    // retrieveImage();
 
     init();
   }
@@ -165,7 +172,7 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
           appBar: AppBar(
             title: Text("Prodotto"),
           ),
-          body: Container(
+          body: SafeArea(
             child: SingleChildScrollView(
                 controller: _scroll,
                 child: Padding(
@@ -176,13 +183,20 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
                         SizedBox(
                           height: 20,
                         ),
-                        _sizedContainer(
-                          CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            placeholder: (context, url) =>
-                            const CircularProgressIndicator(),
-                            errorWidget: (context, url, error) => const Icon(Icons.error),
-                          ),
+                        // _sizedContainer(
+                        //   CachedNetworkImage(
+                        //     imageUrl: imageUrl,
+                        //     placeholder: (context, url) =>
+                        //     const CircularProgressIndicator(),
+                        //     errorWidget: (context, url, error) => const UiIcons.error,
+                        //   ),
+                        // ),
+
+                        Avatar(
+                          imageUrl: _avatarUrl,
+                          onUpload: _onUpload,
+                          productCode: _prodotto?.codice,
+                          isEnabled : _isPictureEnable
                         ),
                         _isLoading
                             ? SizedBox(
@@ -197,7 +211,7 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
           ),
           floatingActionButton: FloatingActionButton(
             elevation: 0.0,
-            child: const Icon(Icons.save_rounded),
+            child:  UiIcons.save,
             // backgroundColor: const Color(0xFFE57373),
             onPressed: _validateInputs,
           )),
@@ -346,6 +360,7 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
               ),
             ],
           ),
+          SizedBox(height: 70,)
         ]),
       ))
     ]);
@@ -532,5 +547,29 @@ class _ProdottiCrudState extends State<ProdottiCrud> {
     });
   }
 
+
+  /// Called when image has been uploaded to Supabase storage from within Avatar widget
+  Future<void> _onUpload(String imageUrl) async {
+    try {
+      WSResponse? resp = await ProdottiRestService.internal(context).updateProdottoAvatar(imageUrl,_prodotto!);
+      if (mounted) {
+        // context.showSnackBar(message: 'Updated your profile image!');
+        AppUtils.errorSnackBar(_scaffoldKey, 'Immagine aggiornata');
+      }
+    } on PostgrestException catch (error) {
+      // context.showErrorSnackBar(message: error.message);
+      AppUtils.errorSnackBar(_scaffoldKey, error.message);
+    } catch (error) {
+      // context.showErrorSnackBar(message: 'Unexpected error has occurred');
+      AppUtils.errorSnackBar(_scaffoldKey, 'Unexpected error has occurred');
+    }
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _avatarUrl = imageUrl;
+    });
+  }
 
 }

@@ -8,10 +8,13 @@ import Foundation
 import app_links
 import connectivity_plus_macos
 import device_info_plus_macos
+import file_selector_macos
 import firebase_core
 import firebase_crashlytics
 import firebase_messaging
 import firebase_remote_config
+import flutter_appauth
+import flutter_secure_storage_macos
 import flutter_web_auth
 import package_info_plus
 import path_provider_foundation
@@ -26,10 +29,13 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
   ConnectivityPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlugin"))
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
+  FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FLTFirebaseCrashlyticsPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCrashlyticsPlugin"))
   FLTFirebaseMessagingPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseMessagingPlugin"))
   FLTFirebaseRemoteConfigPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseRemoteConfigPlugin"))
+  FlutterAppauthPlugin.register(with: registry.registrar(forPlugin: "FlutterAppauthPlugin"))
+  FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
   FlutterWebAuthPlugin.register(with: registry.registrar(forPlugin: "FlutterWebAuthPlugin"))
   FLTPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FLTPackageInfoPlusPlugin"))
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))

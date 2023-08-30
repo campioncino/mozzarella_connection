@@ -8,7 +8,7 @@ import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
-import 'package:bufalabuona/screens/clienti/home.dart';
+import 'package:bufalabuona/screens/home_clienti/home.dart';
 import 'package:bufalabuona/screens/courtesy/confirmed_order_screen.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +18,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
+import '../../utils/ui_icons.dart';
 import 'carello_checkout_screen.dart';
 
 
@@ -107,7 +108,11 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
       mainAxisSize: MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        TextButton(onPressed:_svuotaCarello, child: Text("Svuota Carrello")),
+        Row(crossAxisAlignment:CrossAxisAlignment.center,
+            mainAxisAlignment:MainAxisAlignment.center,
+            children:[TextButton(onPressed:_backToProdotti, child: Text("Torna ai Prodotti ")),
+                      SizedBox(width:40),
+                      TextButton(onPressed:_svuotaCarello, child: Text("Svuota Carrello"))]),
         Flexible(child: _createList(context)),
         SizedBox(height: 100,)
       ],
@@ -119,9 +124,12 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
       padding: const EdgeInsets.all(18.0),
       child: Row(
         children: [
-          Text("Totale ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),),
+          Expanded(
+              flex: 6,
+              child: Text("Totale ${_calcolaTotaleOrdine()}€",style: TextStyle(fontSize: 24,color:Colors.teal[800],fontWeight: FontWeight.bold),)),
           SizedBox(width: 40,),
           Expanded(
+            flex: 4,
             child: RoundedLoadingButton(onPressed: _submit,
                 borderRadius: 15,
                 color: Colors.amberAccent,
@@ -145,6 +153,14 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
 
   }
 
+  _backToProdotti(){
+    Map<String,dynamic>? options = new Map();
+    options['utente']=AppUtils.utente;
+    options['puntoVendita']=AppUtils.puntoVendita;
+    options['route']= 'PRODOTTI';
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false, arguments: options);
+  }
+
 
   _svuotaCarello() async{
     if(_listCart.isNotEmpty){
@@ -165,7 +181,7 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -189,6 +205,7 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
         Row(
           children: [
             Flexible(
+              flex: 8,
               child: Card(
                 margin: EdgeInsets.symmetric(horizontal: 10.0, vertical: 5),
                 elevation: 1.0,
@@ -198,40 +215,81 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
                     width: double.infinity,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Row(
+                      child: Column(
                         children: [
-                        Expanded(
-                          child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(listini.prodDenominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                                  Text(listini.prodDescrzione ?? ''),
-                                  Text("${listini.prodQuantita} ${listini.prodUnimisDescrizione} "),
-                                  Text("${listini.price.toString()} € / ${listini.prodUnimisCodice!.toLowerCase()}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16))
-                                ],
-                              ),
-                        ),
-                          Column(
+                          Row(
+                            children: [
+                            Expanded(
+                              child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(child: Text(listini.prodDenominazione!,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),)),
+                                          IconButton(icon:Icon(UiIcons.trashIco,color: Colors.red,size: 25,), onPressed: ()=>trashElementToList(listini),),
+
+                                        ],
+                                      ),
+                                      Text(listini.prodDescrzione ?? ''),
+                                      Text("${listini.prodQuantita} ${listini.prodUnimisDescrizione} "),
+                                      Text("${listini.price?.toStringAsFixed(2)} € / ${listini.prodUnimisCodice!.toLowerCase()}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 16))
+                                    ],
+                                  ),
+                            ),
+                              // Column(
+                              //   mainAxisAlignment:MainAxisAlignment.spaceBetween ,
+                              //   crossAxisAlignment: CrossAxisAlignment.center,
+                              //   children: [
+                              //     IconButton(icon: Container(
+                              //
+                              //         decoration: BoxDecoration(
+                              //             color: Colors.white,
+                              //             borderRadius: BorderRadius.circular(50),
+                              //             border: Border.all(width: 4, color: Colors.white)),
+                              //         child: (_listCart[listini]!=null && _listCart[listini]!>1) ? Icon(UiIcons.minusIco,size: 20,color: Colors.black54):Icon(UiIcons.trashIco, size: 22, color: Colors.red,)),onPressed: ()=>removeElementToList(listini),),
+                              //     SizedBox(width: 10,),
+                              //     Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w700),),
+                              //     SizedBox(width: 10,),
+                              //     IconButton(icon: Container(
+                              //         decoration: BoxDecoration(
+                              //             color: Colors.teal[800],
+                              //             borderRadius: BorderRadius.circular(100),
+                              //             border: Border.all(width: 5, color: Colors.teal[800]!)),child: UiIcons.plus),onPressed: ()=>addElementToList(listini),)
+                              //
+                              //   ],
+                              // ),
+                            ],
+                          ),
+                          Row(
                             mainAxisAlignment:MainAxisAlignment.spaceBetween ,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               IconButton(icon: Container(
-
                                   decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(50),
                                       border: Border.all(width: 4, color: Colors.white)),
-                                  child: (_listCart[listini]!=null && _listCart[listini]!>1) ? Icon(FontAwesomeIcons.minus,size: 20,color: Colors.black54):Icon(FontAwesomeIcons.trash, size: 22, color: Colors.red,)),onPressed: ()=>removeElementToList(listini),),
-                              SizedBox(width: 10,),
+                                  child: Icon(UiIcons.minusIco,size: 20,color: Colors.black54)),onPressed: ()=>removeElementToList(listini),),
+                                  // child: (_listCart[listini]!=null && _listCart[listini]!>1) ? Icon(UiIcons.minusIco,size: 20,color: Colors.black54):Icon(UiIcons.trashIco, size: 22, color: Colors.red,)),onPressed: ()=>removeElementToList(listini),),
+                              SizedBox(width: 15,),
                               Text(_listCart[listini].toString() ,style: TextStyle(fontSize: 18,fontWeight: FontWeight.w700),),
-                              SizedBox(width: 10,),
+                              SizedBox(width: 15,),
                               IconButton(icon: Container(
                                   decoration: BoxDecoration(
                                       color: Colors.teal[800],
                                       borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(width: 5, color: Colors.teal[800]!)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.white70,)),onPressed: ()=>addElementToList(listini),)
+                                      border: Border.all(width: 5, color: Colors.teal[800]!)),child: UiIcons.plus),onPressed: ()=>addElementToList(listini),),
+
+
+                                Expanded(
+                                  flex: 4,
+                                  child: Align(alignment: Alignment.centerRight,child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 20,color: Colors.teal[800],fontWeight: FontWeight.w700) ,)),
+                                ),
+
 
                             ],
+
                           ),
                         ],
                       ),
@@ -240,10 +298,15 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0,10,7,10),
-              child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 20,color: Colors.teal[800],fontWeight: FontWeight.w700) ,),
-            ),
+            // Expanded(
+            //   flex: 2,
+            //   child: Padding(
+            //     padding: const EdgeInsets.fromLTRB(0,10,7,10),
+            //     child: FittedBox(
+            //         fit: BoxFit.fitWidth,
+            //         child: Text("€ ${_calcolaParzialeOrdine(listini)}",style: TextStyle(fontStyle: FontStyle.normal,fontSize: 20,color: Colors.teal[800],fontWeight: FontWeight.w700) ,)),
+            //   ),
+            // ),
           ],
         ),
       ],
@@ -281,6 +344,21 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
     }
   }
 
+  trashElementToList(ListinoProdottiExt item){
+    int val = _listCart[item]!;
+    if(val>0) {
+      var tot=  ref.read(counterStateProvider.notifier).state;
+      ref.read(counterStateProvider.notifier).state=tot-val;
+      val=0;
+      AppUtils.clearCartItems();
+      AppUtils.storeCartItems(_listCart);
+    }
+    setState(() {
+      _listCart.removeWhere((key, value) => key.sku == item.sku);
+      _filteredValues.removeWhere((element) => element.sku==item.sku);
+    });
+  }
+
   removeElementToList(ListinoProdottiExt item){
     if(checkElementInCart(item)){
       int val = _listCart[item]!;
@@ -305,22 +383,22 @@ class _CarrelloUtenteScreenState extends ConsumerState<CarrelloUtenteScreen> {
   }
 
   String _calcolaTotaleOrdine(){
-     num total=0;
+     double total=0;
     _listCart.forEach((key, value) {
-      var price= key.price! * value;
+      double price= double.parse(key.price!.toStringAsFixed(2)) * value;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
   String _calcolaParzialeOrdine(ListinoProdottiExt listino){
-    num parziale = 0;
+    double parziale = 0;
     _listCart.forEach((key,value){
       if(key.sku==listino.sku){
-        parziale= key.price! * value;
+        parziale= double.parse(key.price!.toStringAsFixed(2)) * value;
       }
     });
-    return parziale.toString();
+    return parziale.toStringAsFixed(2);
   }
 
 

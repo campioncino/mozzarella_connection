@@ -26,13 +26,15 @@ OrdineExt _$OrdineExtFromJson(Map<String, dynamic> json) => OrdineExt()
   ..total = json['total'] as num?
   ..numero = json['numero'] as num?
   ..tipoFiscaleCodice = json['tipo_fiscale_codice'] as String?
+  ..modifiedAt = json['modified_at'] as String?
   ..utenteName = json['utente_name'] as String?
   ..utenteEmail = json['utente_email'] as String?
   ..utenteUsername = json['utente_username'] as String?
   ..utentePhoneNumber = json['utente_phone_number'] as String?
   ..pvenditaDenominazione = json['pvendita_denominazione'] as String?
   ..pvenditaCatDescrizione = json['pvendita_categoria'] as String?
-  ..tipoFiscaleDescrizione = json['tipo_fiscale_descrizione'] as String?;
+  ..tipoFiscaleDescrizione = json['tipo_fiscale_descrizione'] as String?
+  ..numeroDDT = json['numero_ddt'] as String?;
 
 Map<String, dynamic> _$OrdineExtToJson(OrdineExt instance) {
   final val = <String, dynamic>{};
@@ -60,6 +62,7 @@ Map<String, dynamic> _$OrdineExtToJson(OrdineExt instance) {
   writeNotNull('total', instance.total);
   writeNotNull('numero', instance.numero);
   writeNotNull('tipo_fiscale_codice', instance.tipoFiscaleCodice);
+  writeNotNull('modified_at', instance.modifiedAt);
   writeNotNull('utente_name', instance.utenteName);
   writeNotNull('utente_email', instance.utenteEmail);
   writeNotNull('utente_username', instance.utenteUsername);
@@ -67,5 +70,6 @@ Map<String, dynamic> _$OrdineExtToJson(OrdineExt instance) {
   writeNotNull('pvendita_denominazione', instance.pvenditaDenominazione);
   writeNotNull('pvendita_categoria', instance.pvenditaCatDescrizione);
   writeNotNull('tipo_fiscale_descrizione', instance.tipoFiscaleDescrizione);
+  writeNotNull('numero_ddt', instance.numeroDDT);
   return val;
 }

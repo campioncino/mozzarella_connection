@@ -2,7 +2,6 @@ import 'package:bufalabuona/model/prodotto.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,7 +20,7 @@ class ProdottiRestService {
       var response = await Supabase.instance.client
           .from(Prodotto.TABLE_NAME)
           .select()
-          .order(orderBy??'id', ascending: ascending??true)  //comunque non mi piace
+          .order(orderBy??'denominazione', ascending: ascending??true)  //comunque non mi piace
           ;
 
       if(response.data!=null){
@@ -40,7 +39,7 @@ class ProdottiRestService {
       var response = await Supabase.instance.client
           .from(Prodotto.TABLE_NAME)
           .select()
-          .order(orderBy??'prod_id', ascending: ascending??true)  //comunque non mi piace
+          .order(orderBy??'denominazione', ascending: ascending??true)  //comunque non mi piace
           ;
 
       if(response!=null){
@@ -118,5 +117,12 @@ class ProdottiRestService {
     }
     return result;
   }
+
+
+  Future<WSResponse> updateProdottoAvatar(String imageUrl,Prodotto item) async {
+    item.imageUrl=imageUrl;
+    return await updateProdotto(item);
+  }
+
 
   }

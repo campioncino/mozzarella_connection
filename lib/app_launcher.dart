@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:bufalabuona/screens/admin/home_admin.dart';
+import 'package:bufalabuona/screens/home_admin/home_admin.dart';
 import 'package:bufalabuona/screens/bufala_router.dart';
-import 'package:bufalabuona/screens/clienti/home.dart';
+import 'package:bufalabuona/screens/home_clienti/home.dart';
 import 'package:bufalabuona/screens/courtesy/confirmed_order_screen.dart';
 import 'package:bufalabuona/screens/login/change_password.dart';
 import 'package:bufalabuona/screens/login/forgot_password.dart';
@@ -12,6 +12,7 @@ import 'package:bufalabuona/screens/login/signin_screen.dart';
 import 'package:bufalabuona/screens/login/signup_screen.dart';
 import 'package:bufalabuona/screens/prodotti/prodotti_list.dart';
 import 'package:bufalabuona/screens/web_home_screen.dart';
+import 'package:bufalabuona/utils/ui_colors.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:flutter/foundation.dart';
@@ -23,22 +24,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'model/utente.dart';
 
-// Define your seed colors.
-const Color tertiarySeedColor = Color(0xFF6750A4);
- const Color primarySeedColor = Colors.white;
-//  const Color primarySeedColor = Color(0x8901178C);
-// const Color primarySeedColor = Color(0xFF3BBAD5);
 
-
-const Color secondarySeedColor = Color(0xFF6CA450);
 
 final ColorScheme schemeLight = SeedColorScheme.fromSeeds(
   brightness: Brightness.light,
   // Primary key color is required, like seed color ColorScheme.fromSeed.
-  primaryKey: primarySeedColor,
+  primaryKey: UiColors.PRIMARY,
   // You can add optional own seeds for secondary and tertiary key colors.
-  secondaryKey: secondarySeedColor,
-  tertiaryKey: tertiarySeedColor,
+  secondaryKey: UiColors.SECONDARY,
+  tertiaryKey: UiColors.TERTIARY,
   // Tone chroma config and tone mapping is optional, if you do not add it
   // you get the config matching Flutter's Material 3 ColorScheme.fromSeed.
   tones: FlexTones.vivid(Brightness.light),
@@ -47,9 +41,9 @@ final ColorScheme schemeLight = SeedColorScheme.fromSeeds(
 // Make a dark ColorScheme from the seeds.
 final ColorScheme schemeDark = SeedColorScheme.fromSeeds(
   brightness: Brightness.dark,
-  primaryKey: primarySeedColor,
-  secondaryKey: secondarySeedColor,
-  tertiaryKey: tertiarySeedColor,
+  primaryKey: UiColors.PRIMARY,
+  secondaryKey: UiColors.SECONDARY,
+  tertiaryKey: UiColors.TERTIARY,
   tones: FlexTones.vivid(Brightness.dark),
 );
 
@@ -72,26 +66,6 @@ class _AppLauncherState  extends State<AppLauncher> {
 
   String? _errorMessage;
 
-  // bool _isAdmin = false;
-
-  // @override
-  // void onAuthenticated(Session session) {
-  //   final _user = session.user;
-  //   // if (_user != null) {
-  //   //   setState(() {
-  //   //     user = _user;
-  //   //   });
-  //   //   // _loadUtente(_user.id);
-  //   //   // if(_utente!=null && _utente!.ruolo!='admin'){
-  //   //   // _loadPuntoVendita(_utente!.puntoVendita!);}
-  //   //   // initState();
-  //   // }
-  //   setState(() {
-  //     user = _user;
-  //   });
-  // }
-
-  //PERMISSION HANDLER
   Future<bool> _checkPermissions() async {
     // IOS
     // FIREBASE PUSH NOTIFICATION IOS
@@ -117,44 +91,6 @@ class _AppLauncherState  extends State<AppLauncher> {
     _firebaseMessaging.requestPermission(
         sound: true, badge: true, alert: true, provisional: false);
   }
-
-  // Future<Utente?> _loadUtente(String userId) async {
-  //   try {
-  //     final response = await Supabase.instance.client
-  //         .from('utenti')
-  //         .select(
-  //     )
-  //         .eq('profile_id', userId)
-  //         .maybeSingle()
-  //         ;
-  //     if (response.error != null) {
-  //       throw "Load profile failed: ${response.error!.message}";
-  //     } else {
-  //       _utente = Utente.fromJson(response.data);
-  //     }
-  //   } catch (e) {
-  //     _errorMessage = e.toString();
-  //   }
-  // }
-
-  // Future<PuntoVendita?> _loadPuntoVendita(int id) async {
-  //   try {
-  //     final response = await Supabase.instance.client
-  //         .from('punti_vendita')
-  //         .select(
-  //     )
-  //         .eq('id', id)
-  //         .maybeSingle()
-  //         ;
-  //     if (response.error != null) {
-  //       throw "Load punto vendita failed: ${response.error!.message}";
-  //     } else {
-  //       _puntoVendita = PuntoVendita.fromJson(response.data);
-  //     }
-  //   } catch (e) {
-  //     _errorMessage = e.toString();
-  //   }
-  // }
 
 
   bool checkIfIsAdmin(Utente? u) {
@@ -201,11 +137,21 @@ class _AppLauncherState  extends State<AppLauncher> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Demo',
+      //leviamo il banner pe gli screenshot
+      debugShowCheckedModeBanner: false,
+      title: 'BufalaBuona',
       theme: ThemeData.from(
         colorScheme: schemeLight,
         useMaterial3: true,
+      )
+          .copyWith(cardTheme: CardTheme(
+        // surfaceTintColor: Colors.white,
+      )
+
       ),
+     
+
+
       // darkTheme: ThemeData.from(
       //   colorScheme: schemeDark,
       //   useMaterial3: true,

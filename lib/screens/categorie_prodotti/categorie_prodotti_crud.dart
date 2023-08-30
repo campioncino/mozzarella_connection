@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/categorie_prodotti_rest_service.dart';
+import '../../utils/ui_icons.dart';
 
 class CategorieProdottiCrud extends StatefulWidget {
   final CategoriaProdotto? categoria;
@@ -89,7 +90,7 @@ class _CategorieProdottiCrudState extends State<CategorieProdottiCrud> {
           : WillPopScope(onWillPop: null, child: stackWidget()),
       floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child: _updateMode ?const Icon(Icons.save) : const Icon(Icons.arrow_right_alt),
+          child: _updateMode ? UiIcons.save :  UiIcons.arrowRightAlt,
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _onSave),
     );
@@ -134,7 +135,7 @@ class _CategorieProdottiCrudState extends State<CategorieProdottiCrud> {
       form.save();
 
 
-      if(!_updateMode && _categorieList!.any((item) => item.codice == int.parse(_categoria!.codice!))){
+      if(!_updateMode && _categorieList!.any((item) => item.codice == int.parse(_categoria?.codice??'0'))){
         bool? ok = await showDialog<bool>(
           barrierDismissible: false,
           context: context,

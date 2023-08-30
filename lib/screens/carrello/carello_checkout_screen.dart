@@ -6,23 +6,26 @@ import 'package:bufalabuona/model/ordine.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
+import 'package:bufalabuona/utils/ui_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
-import '../clienti/home.dart';
+import '../home_clienti/home.dart';
 
 class CarelloCheckoutScreen extends ConsumerStatefulWidget {
   final PuntoVendita? puntoVendita;
-  final Map<ListinoProdottiExt,int>? listCart;
+  final Map<ListinoProdottiExt,num>? listCart;
 
   const CarelloCheckoutScreen({Key? key, @required this.puntoVendita, @required this.listCart}) : super(key: key);
 
   @override
   ConsumerState<CarelloCheckoutScreen> createState() => _CarelloCheckoutScreenState();
 }
+
+enum TipoPagamento { FATTURA, RICEVUTA, EXTRA }
 
 class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
@@ -33,7 +36,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
 
   PuntoVendita? _puntoVendita;
-  Map<ListinoProdottiExt,int>? _listCart;
+  Map<ListinoProdottiExt,num>? _listCart;
 
   TextEditingController _indirizzoController = new TextEditingController();
   TextEditingController _dataSpedizioneController = new TextEditingController();
@@ -50,7 +53,13 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
   Ordine? _ordineInviato;
 
   bool _indirizzoEnabled=false;
+  TipoPagamento? _tipoPagamento;
+  bool _isReadOnly=false;
 
+  bool fattura=false;
+  bool ricevuta=false;
+
+  List<String> _listIndirizziConsegna=[];
 
   @override
   void initState() {
@@ -64,12 +73,41 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
   void init() async {
     setState(() {
+      ricevuta=_puntoVendita!.flRicevuta ?? false;
+      fattura = _puntoVendita!.flFattura ?? false;
+      if(fattura && !ricevuta){
+        _tipoPagamento = TipoPagamento.FATTURA;
+      }else if(!fattura && ricevuta){
+        _tipoPagamento = TipoPagamento.RICEVUTA;
+      }
       _dtSpedizione = DateTime.now().add((Duration(days:2)));
-      
       _indirizzoController.text = _puntoVendita!.indirizzoConsegna ?? 'INSERIRE INDIRIZZO DI CONSEGNA';
-      _dataSpedizioneController.text = dateFormatter.format(_dtSpedizione!);
+      initDataSpedizione();
+      initIndirizziConsegna();
+      // _dataSpedizioneController.text = dateFormatter.format(_dtSpedizione!);
       _isLoading=false;
     });
+  }
+
+  void initDataSpedizione() {
+    if (_dtSpedizione!.isBefore(DateTime.now())) {
+        _dtSpedizioneSelected(DateTime.now().add(const Duration(days: 1)));
+    }else{
+    setState(() {
+        _dataSpedizioneController.text =
+            dateFormatter.format(_dtSpedizione!);
+    });
+    }
+  }
+
+  void initIndirizziConsegna(){
+    if(_puntoVendita!.indirizzoConsegna!=null){
+      _listIndirizziConsegna.add(_puntoVendita!.indirizzoConsegna!);
+    }
+    if(_puntoVendita!.indirizzo!=null){
+      _listIndirizziConsegna.add(_puntoVendita!.indirizzo!);
+    }
+    _listIndirizziConsegna.add('Ritiro presso punto vendita');
   }
 
   @override
@@ -79,7 +117,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
         child: Scaffold(
         appBar: AppBar(
           title: Text('Concludi Ordine'),
-          // actions: [IconButton(onPressed: _svuotaCarello, icon:  Icon(Icons.remove_shopping_cart,size: 33,))],
+          // actions: [IconButton(onPressed: _svuotaCarello, icon:  UiIcons.removeShoppingCart)],
         ),
         resizeToAvoidBottomInset: false,
         body: WillPopScope(
@@ -100,7 +138,8 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
             child: RoundedLoadingButton(onPressed: _submit,
                 borderRadius: 15,
                 color: Colors.amberAccent,
-                controller: _submitController,child: Text("Checkout",style: TextStyle(fontSize: 22,color: Colors.black),)),
+                controller: _submitController,
+                child: Text("Checkout",style: TextStyle(fontSize: 22,color: Colors.black),)),
           )
         ],
       ),
@@ -139,6 +178,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
             dataSpedizioneCard(),
             noteSpedizioneCard(),
             prodottiRiepilogoCard(),
+            pagamentoCard(),
             SizedBox(height: 100,)
           ]),
     ));}
@@ -149,6 +189,19 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
       _submitController.reset();
       return;
     }
+
+    if(_tipoPagamento==null){
+      showMessage("Selezionare la modalità di pagamento");
+      _submitController.reset();
+      return;
+    }
+
+    if(_dataSpedizioneController.text==null || _dataSpedizioneController.text.isEmpty){
+      showMessage("Selezionare la data di consegna");
+      _submitController.reset();
+      return;
+    }
+
     if(_listCart!=null && _listCart!.isNotEmpty) {
       bool _isOrderSended = false;
       _sendOrder = await askContinua(context);
@@ -222,9 +275,9 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
     ordine.utenteId = AppUtils.utente.profileId!;
     ordine.statoCodice = "INVIATO";
     ordine.pvenditaId = _puntoVendita!.id;
-    ordine.note = "note ordine";
+    ordine.note = _noteController.text ?? '';
     ordine.dtConsegna = postgresDateFormatter.parse(AppUtils.toPostgresStringDate(_dataSpedizioneController.text));
-
+    ordine.tipoFiscaleCodice = _tipoPagamento!.name;
 
     WSResponse  resp = await OrdiniRestService.internal(context).upsertOrdine(ordine);
     if(resp.errors!=null){
@@ -249,10 +302,12 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
 
       WSResponse respCart = await CartItemRestService.internal(context)
-          .upsertMultipleCartItem(listCartItems);
+          .insertMultipleCartItem(listCartItems);
       if(respCart.success!=null && respCart.success!){
         debugPrint("abbiamo creato ordine e carrello");
         isOrderOk=true;
+      }else{
+        debugPrint(respCart.errors.toString());
       }
     }
 
@@ -275,7 +330,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
       var price= key.price! * value;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
 
@@ -298,9 +353,9 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
                   ]
                   ))),
-                ListTile(leading: Icon(FontAwesomeIcons.truckFast,color: Colors.black54,size: 36,),
+                ListTile(leading: Icon(UiIcons.truckFastIco,color: Colors.black54,size: 36,),
                   title: dtSpedizione(),
-                  trailing:   IconButton(icon:Icon(Icons.edit_calendar,color: Colors.black87,),onPressed:()=> _chooseDtFineTrt(context)),
+                  trailing:   IconButton(icon:Icon(UiIcons.editCalendarIco,color: Colors.black87,),onPressed:()=> _chooseDtFineTrt(context)),
 
                 ),
               ],
@@ -341,12 +396,15 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
           // color: Color(0xFF3BBAD5),
           // color:Colors.lightBlue[300],
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.basketShopping,color: Colors.black54,size: 36,),
-            title: Column(children: [
+          child: ListTile(leading: Icon(UiIcons.basketShoppingIco,color: Colors.black54,size: 36,),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Text("Elenco dei Prodotti"),
               Text(prodotti.join("\n"))
             ],),
             // title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-            trailing: IconButton(icon: Icon(Icons.chevron_right,color: Colors.black54,),onPressed: (){
+            trailing: IconButton(icon: UiIcons.chevronRight,onPressed: (){
               Navigator.pop(context);
             },),
           ),
@@ -363,7 +421,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
           // color: Color(0xFF3BBAD5),
           // color:Colors.lightBlue[300],
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.mapLocationDot,color: Colors.black54,size: 36,),
+          child: ListTile(leading: UiIcons.mapLocationDot,
             title: TextFormField(
               maxLines: 2,
               controller: _indirizzoController,
@@ -375,8 +433,17 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
               style: TextStyle(fontWeight: FontWeight.bold,fontSize: 15,color: Colors.black54),
             ),
             // title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-            trailing: IconButton(icon: Icon(Icons.edit_location_alt_outlined,color: Colors.black54,),
-                onPressed: ()=>_displayTextInputDialog(context,_indirizzoController,"Inserisci indirizzo per la consegna",_puntoVendita!.indirizzoConsegna)
+            trailing: IconButton(icon: UiIcons.editLocation,
+                // onPressed: ()=>_displayTextInputDialog(context,_indirizzoController,"Inserisci indirizzo per la consegna",_puntoVendita!.indirizzoConsegna)
+                onPressed:()=> showModalBottomSheet(context:context,
+                    builder: (BuildContext context){
+                      return SizedBox(height: 500,child: Column(children: [
+                        SizedBox(height: 3,),
+                        Text("Seleziona l'indirizzo di consegna dei prodotti",style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold),),
+                        SingleChildScrollView(child:createRadioListIndirizzi()),
+                        MaterialButton(onPressed: ()=>_displayTextInputDialog(context,_indirizzoController,"Inserisci indirizzo per la consegna",_puntoVendita!.indirizzoConsegna,_listIndirizziConsegna), child: Text('Aggiungi nuovo indirizo'))
+                      ],));
+                } ),
             )
           ),
           ),
@@ -384,6 +451,31 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
     );
   }
 
+
+  setSelectedIndirizzo(String address) {
+    setState(() {
+      _indirizzoController.text = address;
+    });
+  }
+
+   Widget createRadioListIndirizzi() {
+    List<Widget> widgets = [];
+    for (String indirizzo in _listIndirizziConsegna) {
+      widgets.add(
+        RadioListTile(
+          value: indirizzo,
+          groupValue: null,
+          title: Text(indirizzo),
+          onChanged: (value) {
+            setSelectedIndirizzo(value.toString());
+            Navigator.pop(context);
+          },
+          activeColor: Colors.green,
+        ),
+      );
+    }
+    return new Column(children: widgets);
+  }
 
 
   Widget noteSpedizioneCard(){
@@ -393,7 +485,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
         child: Container(
           // color:Colors.white70,
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.noteSticky,color: Colors.black54,size: 36,),
+          child: ListTile(leading: Icon(UiIcons.noteStickyIco,color: Colors.black54,size: 36,),
             title: TextFormField(
               controller: _noteController,
               decoration: InputDecoration(
@@ -404,8 +496,8 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
               style: TextStyle(fontWeight: FontWeight.bold,fontSize: 15,color: Colors.black87),
             ),
             // title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-            trailing: IconButton(icon: Icon(Icons.edit,color: Colors.black87,),
-                      onPressed: ()=>_displayTextInputDialog(context,_noteController,"Inserisci note per la consegna",null)),
+            trailing: IconButton(icon: Icon(UiIcons.editIco,color: Colors.black87,),
+                      onPressed: ()=>_displayTextInputDialog(context,_noteController,"Inserisci note per la consegna",null,null)),
           ),
         ),
       ),
@@ -437,7 +529,7 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
 
   String? alertDialogValueText;
 
-  Future<void> _displayTextInputDialog(BuildContext context, TextEditingController _textFieldController, String title, String? defaultValue) async {
+  Future<void> _displayTextInputDialog(BuildContext context, TextEditingController _textFieldController, String title, String? defaultValue, List? listValue) async {
     return showDialog(
         context: context,
         builder: (context) {
@@ -469,6 +561,10 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
                 onPressed: () {
                   setState(() {
                     _textFieldController.text = alertDialogValueText??'';
+                    if(alertDialogValueText!=null && listValue!=null){
+                      listValue.add(alertDialogValueText);
+                      Navigator.pop(context);
+                    }
                     Navigator.pop(context);
                   });
                 },
@@ -477,4 +573,60 @@ class _CarelloCheckoutScreenState extends ConsumerState<CarelloCheckoutScreen> {
           );
         });
   }
+
+  Widget pagamentoCard(){
+   if(_puntoVendita!.flFattura!=null && _puntoVendita!.flFattura! && _puntoVendita!.flRicevuta!=null && _puntoVendita!.flRicevuta!){
+     return Padding(
+       padding: const EdgeInsets.all(2.0),
+       child: Card(
+         child: Column(
+           mainAxisAlignment: MainAxisAlignment.start,
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             Padding(
+               padding: const EdgeInsets.fromLTRB(14,14,10,4),
+               child: Text("tipo di documento fiscale",style: TextStyle(fontSize: 14,color: Colors.black54)),
+             ),
+             Row(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: <Widget>[
+
+                 Expanded(
+                   flex: 1,
+                   child: RadioListTile<TipoPagamento>(
+                     title: const Text('Fattura'),
+                     value: TipoPagamento.FATTURA,
+                     groupValue: _tipoPagamento,
+                     onChanged: _isReadOnly ?null :(TipoPagamento? value) {
+                       setState(() {
+                         _tipoPagamento = value;
+                       });
+                     },
+                   ),
+                 ),
+                 Expanded(
+                   flex: 1,
+                   child: RadioListTile<TipoPagamento>(
+                     title: const Text('Ricevuta'),
+                     value: TipoPagamento.RICEVUTA,
+                     groupValue: _tipoPagamento,
+                     onChanged: _isReadOnly ?null :(TipoPagamento? value) {
+                       setState(() {
+                         _tipoPagamento = value;
+                       });
+                     },
+                   ),
+                 ),
+               ],
+             ),
+           ],
+         ),
+       ),
+     ) ;
+   }else{
+   return Container();}
+  }
+
+
 }

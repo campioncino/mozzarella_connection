@@ -22,7 +22,8 @@ Prodotto _$ProdottoFromJson(Map<String, dynamic> json) => Prodotto()
   ..dtInserimento = json['dt_inserimento'] as String?
   ..dtFinVal = json['dt_fin_val'] as String?
   ..quantita = json['quantita'] as num?
-  ..catProdottoCodice = json['cat_prodotto_codice'] as String?;
+  ..catProdottoCodice = json['cat_prodotto_codice'] as String?
+  ..imageUrl = json['image_url'] as String?;
 
 Map<String, dynamic> _$ProdottoToJson(Prodotto instance) {
   final val = <String, dynamic>{};
@@ -47,5 +48,6 @@ Map<String, dynamic> _$ProdottoToJson(Prodotto instance) {
   writeNotNull('dt_fin_val', instance.dtFinVal);
   writeNotNull('quantita', instance.quantita);
   writeNotNull('cat_prodotto_codice', instance.catProdottoCodice);
+  writeNotNull('image_url', instance.imageUrl);
   return val;
 }

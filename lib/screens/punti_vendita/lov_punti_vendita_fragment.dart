@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../model/punto_vendita.dart';
+import '../../utils/ui_icons.dart';
 
 class LovPuntiVenditaFragment extends StatefulWidget {
   final String appbarTitle;
@@ -109,7 +110,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
       floatingActionButton: this.widget.showInsert
           ? new FloatingActionButton(
         elevation: 0.0,
-        child:Icon(FontAwesomeIcons.plus),
+        child:Icon(UiIcons.plusIco),
         onPressed: _editPuntoVendita,
       )
           : new Container(
@@ -129,7 +130,7 @@ class _LovPuntiVenditaFragmentState extends State<LovPuntiVenditaFragment> {
           border: InputBorder.none,
           hintText:"Nome Punto Vendita",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return new Card(

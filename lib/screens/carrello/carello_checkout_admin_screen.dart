@@ -20,6 +20,7 @@ import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../../data/cart_item_rest_service.dart';
 import '../../model/cart_item.dart';
 import '../../pdf/pdf_api.dart';
+import '../../utils/ui_icons.dart';
 
 class CarrelloCheckoutAdminScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
@@ -172,7 +173,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
           actions: [FloatingActionButton(
            backgroundColor: Colors.white70,
           elevation: 0.0,
-          child:   Icon(Icons.picture_as_pdf_rounded,size: 36,color: Colors.red[900],),
+          child: UiIcons.pdfRounded,
           // backgroundColor: const Color(0xFFE57373),
           onPressed:() async =>await _generatePdf())],
         ),
@@ -232,7 +233,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
                 // TextButton.icon(
                 //   onPressed: ()=>aggiungiProdotto(),
                 //   label: Text("AGGIUNGI PRODOTTO"),
-                //   icon: Icon(Icons.add, size: 20),
+                //   icon: Icon(UiIcons.addIco, size: 20),
                 // ),
               ],
             ),
@@ -261,7 +262,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
       return AppUtils.loader(context);
     }
     if (this._adminValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         shrinkWrap: true,
@@ -351,18 +352,18 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text("Ordine #${_ordine!.numero}",style: TextStyle(fontWeight: FontWeight.w600),),
-          Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
+          Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt??'')?.substring(0,10)}"),
         ],),
     );}
 
   Widget puntoVenditaCard(){
     return Card(
     child: ListTile(
-    leading: Icon(FontAwesomeIcons.house),
+    leading: UiIcons.house,
     title:Text("${_puntoVendita?.denominazione}"),
     subtitle: Text("${_puntoVendita?.ragSociale}"))
       // child: ListTile(
-      //   leading: Icon(FontAwesomeIcons.house),
+      //   leading: UiIcons.house,
       //   title: Container(
       //    child: Column(
       //      crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,9 +384,8 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
   Widget indrizzoSpedizione(){
     return Container(
       width: MediaQuery.of(context).size.width,
-      child: ListTile(leading: Icon(FontAwesomeIcons.locationDot,color: Colors.black54),
+      child: ListTile(leading: UiIcons.locationDot,
         title: Text("Invia a : ${_puntoVendita!.indirizzoConsegna?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-        // trailing: IconButton(icon: Icon(FontAwesomeIcons.pencil),onPressed: (){},),
       ),
     );
   }
@@ -423,7 +423,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
       var price= value.price! * value.quantita!;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
   Widget totaleOrdineCard(){
@@ -457,7 +457,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
     if(_isOrderSended){
       _goToOrdiniAdmin();}
     else{
-      debugPrint("errore nell'invio orcodio");
+      debugPrint("errore nell'invio admin");
     }
 
   }
@@ -514,6 +514,8 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
     _ordine!.dtConsegna= postgresDateFormatter.parse(AppUtils.toPostgresStringDate(_dataSpedizioneController.text));
     _ordine!.tipoFiscaleCodice =_tipoPagamento!.name;
 
+    var dateValue = new DateFormat("yyyy-MM-ddTHH:mm:ssZ").format(DateTime.now());
+    _ordine!.modifiedAt = dateValue;
 
     WSResponse  resp = await OrdiniRestService.internal(context).upsertOrdine(_ordine!);
     if(resp.errors!=null){
@@ -559,7 +561,13 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
           }
         }
       }
-
+      if(statoOrdine=='RIFIUTA'){
+        isOrderOk=true;
+      }
+    }else{
+      if(statoOrdine=='RIFIUTA'){
+        isOrderOk=true;
+      }
     }
 
     if(updateProducts && (listCartItemsToInsert.isEmpty || insertProducts)){
@@ -607,9 +615,9 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
                       TextSpan(text: "\nPuoi modificare la data di consegna",style: TextStyle(color: Colors.black54)),
                     ]
                     ))),
-                ListTile(leading: Icon(FontAwesomeIcons.truckFast,color: Colors.black54,size: 36,),
+                ListTile(leading: Icon(UiIcons.truckFastIco,color: Colors.black54,size: 36,),
                   title: dtSpedizione(),
-                  trailing:   IconButton(icon:Icon(Icons.edit_calendar,color: _isReadOnly ? Colors.grey : Colors.black87,),onPressed: _isReadOnly ? null : ()=> _chooseDtFineTrt(context)),
+                  trailing:   IconButton(icon:Icon(UiIcons.editCalendarIco,color: _isReadOnly ? Colors.grey : Colors.black87,),onPressed: _isReadOnly ? null : ()=> _chooseDtFineTrt(context)),
 
                 ),
               ],
@@ -670,7 +678,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
         child: Container(
           // color:Colors.white70,
           width: MediaQuery.of(context).size.width,
-          child: ListTile(leading: Icon(FontAwesomeIcons.noteSticky,color: Colors.black54,size: 36,),
+          child: ListTile(leading: Icon(UiIcons.noteStickyIco,color: Colors.black54,size: 36,),
             title: TextFormField(
               controller: _noteController,
               decoration: InputDecoration(
@@ -681,7 +689,7 @@ class _CarrelloCheckoutAdminScreenState extends State<CarrelloCheckoutAdminScree
               style: TextStyle(fontWeight: FontWeight.bold,fontSize: 15,color: Colors.black87),
             ),
             // title: Text("Invia a : ${_puntoVendita!.indirizzo?? 'NESSUN INDIRIZZO SPECIFICATO'}",style: TextStyle(fontStyle: FontStyle.italic),),
-            trailing: IconButton(icon: Icon(Icons.edit,color: _isReadOnly ? Colors.grey :Colors.black87,),
+            trailing: IconButton(icon: Icon(UiIcons.editIco,color: _isReadOnly ? Colors.grey :Colors.black87,),
                 onPressed: _isReadOnly ? null : ()=>_displayTextInputDialog(context,_noteController,"Inserisci note per la consegna",_ordine!.note)),
           ),
         ),

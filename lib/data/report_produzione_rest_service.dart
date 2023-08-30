@@ -1,4 +1,5 @@
 import 'package:bufalabuona/main.dart';
+import 'package:bufalabuona/model/report_produzione_casaro_json_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -72,7 +73,7 @@ class ReportProduzioneRestService {
   Future<WSResponse> getReportProduzione(String? data) async {
     WSResponse result = new WSResponse();
     try {
-      var response = await Supabase.instance.client.rpc("func_report_produzione",params: {'data_report': data});
+      var response = await Supabase.instance.client.rpc("func_report_produzione_casaro",params: {'data_report': data});
       if (response != null) {
         result = AppUtils.parseWSResponse(response);
       }
@@ -115,6 +116,15 @@ class ReportProduzioneRestService {
   List<ReportProduzioneJsonData> parseJsonDataList(List responseBody) {
     List<ReportProduzioneJsonData> list = responseBody
         .map<ReportProduzioneJsonData>((f) => ReportProduzioneJsonData.fromJson(f))
+        .toList();
+    //ordiniamoli dal più recente al più vecchio
+    // list.sort((a, b) => b.presId!.compareTo(a.presId!));
+    return list;
+  }
+
+  List<ReportProduzioneCasaroJsonData> parseCasaroJsonDataList(List responseBody) {
+    List<ReportProduzioneCasaroJsonData> list = responseBody
+        .map<ReportProduzioneCasaroJsonData>((f) => ReportProduzioneCasaroJsonData.fromJson(f))
         .toList();
     //ordiniamoli dal più recente al più vecchio
     // list.sort((a, b) => b.presId!.compareTo(a.presId!));

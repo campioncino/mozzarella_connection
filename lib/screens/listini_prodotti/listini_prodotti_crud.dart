@@ -17,6 +17,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
 import '../../utils/ensure_visibility_textformfield.dart';
+import '../../utils/ui_icons.dart';
 
 class ListiniProdottiCrud extends ConsumerStatefulWidget {
   final Listino? listino;
@@ -105,7 +106,7 @@ class _ListiniProdottiCrudState extends ConsumerState<ListiniProdottiCrud> {
       body: WillPopScope(onWillPop: null, child: stackWidget()),
       floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child: const Icon(Icons.save),
+          child:  UiIcons.save,
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _onSave),
     );
@@ -145,7 +146,7 @@ class _ListiniProdottiCrudState extends ConsumerState<ListiniProdottiCrud> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context, FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context, UiIcons.userSlash);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -474,7 +475,7 @@ class _ListiniProdottiCrudState extends ConsumerState<ListiniProdottiCrud> {
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Icon(FontAwesomeIcons.clipboardList,size: 44,),
+              child: UiIcons.clipBoardList,
             ),
             Expanded(child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18.0,vertical: 5),
@@ -488,7 +489,7 @@ class _ListiniProdottiCrudState extends ConsumerState<ListiniProdottiCrud> {
                 ],
               ),
             )),
-            IconButton(onPressed: _editListinoInformation, icon: Icon(FontAwesomeIcons.pencil))
+            IconButton(onPressed: _editListinoInformation, icon: UiIcons.pencil)
           ]
           )),
     );

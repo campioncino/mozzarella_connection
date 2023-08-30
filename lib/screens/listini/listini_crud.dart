@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import '../../utils/ui_icons.dart';
+
 class ListiniCrud extends StatefulWidget {
   final Listino? listino;
   final bool? updateMode;
@@ -101,7 +103,7 @@ class _ListiniCrudState extends State<ListiniCrud> {
           : WillPopScope(onWillPop: null, child: stackWidget()),
       floatingActionButton: FloatingActionButton(
           elevation: 0.0,
-          child: _updateMode ?const Icon(Icons.save) : const Icon(Icons.arrow_right_alt),
+          child: _updateMode ? UiIcons.save :  UiIcons.arrowRightAlt,
           // backgroundColor: const Color(0xFFE57373),
           onPressed: _onSave),
     );

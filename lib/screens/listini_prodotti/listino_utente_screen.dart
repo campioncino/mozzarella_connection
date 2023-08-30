@@ -1,11 +1,14 @@
 import 'dart:convert';
 
 import 'package:badges/badges.dart';
+import 'package:bufalabuona/data/categorie_prodotti_rest_service.dart';
 import 'package:bufalabuona/data/listini_prodotti_rest_service.dart';
 import 'package:bufalabuona/data/punti_vendita_rest_service.dart';
+import 'package:bufalabuona/model/categoria_prodotto.dart';
 import 'package:bufalabuona/model/listino_prodotti_ext.dart';
 import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_response.dart';
+import 'package:bufalabuona/screens/avatar.dart';
 import 'package:bufalabuona/screens/carrello/carello_utente_screen.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -15,11 +18,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart' show toBeginningOfSentenceCase;
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../main.dart';
-import '../clienti/home.dart';
+import '../../utils/ui_icons.dart';
+import '../home_clienti/home.dart';
 
 
 class ListinoUtenteScreen extends ConsumerStatefulWidget {
@@ -32,6 +37,8 @@ class ListinoUtenteScreen extends ConsumerStatefulWidget {
 }
 
 class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
+
+  List<CategoriaProdotto> _listCategoriaProdotto=[];
 
   PuntoVendita? _puntoVendita;
   bool _showSearchBar=true;
@@ -46,6 +53,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
   List<ListinoProdottiExt>? _values ;
   List<ListinoProdottiExt> _filteredValues = [];
 
+  TextEditingController _textFieldQuantityController = new TextEditingController();
 
   Map<ListinoProdottiExt,int> _listCart ={};
 
@@ -59,7 +67,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<ListinoProdottiExt> list = _values!.where((v) {
@@ -89,6 +97,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
   void init() async{
     await readData();
     await retrieveImages();
+    await readCategoriaProdotto();
     setState(() {
       _isLoading=false;
     });
@@ -112,6 +121,21 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
     }
   }
 
+  readCategoriaProdotto() async {
+    WSResponse resp = await CategorieProdottiRestService.internal(context)
+        .getAll();
+    if (resp.data != null) {
+      if (resp.success != null && resp.success!) {
+        setState(() {
+          _listCategoriaProdotto.addAll(CategorieProdottiRestService.internal(context).parseList(
+              resp.data!));
+        });
+      }
+      else {
+        debugPrint("errore categoria prodotti");
+      }
+    }
+  }
 
 
   @override
@@ -137,7 +161,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
         //             fontSize: 16 //badge font size
         //         )
         //         ),
-        //         child: Icon(FontAwesomeIcons.cartShopping)),
+        //         child: UiIcons.cartShopping),
         //     splashColor: Colors.grey,
         //   label: const Padding(
         //       padding: EdgeInsets.symmetric(horizontal: 18.0),
@@ -185,12 +209,13 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
         },
         child: body2());
   }
-
+  Set<CategoriaProdotto> filters = <CategoriaProdotto>{};
 
   Widget body2() {
     return Expanded(child: Column(
       children: [
-          if(_showSearchBar) _buildSearchBar(context),
+        if(_showSearchBar) _buildSearchBar(context),
+        // _buildChipValues(),
         SizedBox(height: 20),
         Flexible(child: _createList(context)),
         // SizedBox(height: 80)
@@ -204,7 +229,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         shrinkWrap: true,
@@ -240,7 +265,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
           borderOnForeground: true,
           surfaceTintColor: Colors.white70,
           margin: EdgeInsets.all(5.0),
-          elevation: 4.0,
+          elevation: 1.0,
           child:Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -337,12 +362,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
   }
 
   Widget prodottoDrawItemRow(ListinoProdottiExt listino,int position){
-    if (listImages.any((val) => val.name.split('.')[0] == listino.prodCodice!.toUpperCase())) {
-      imageUrl = supabase
-          .storage
-          .from('public-images')
-          .getPublicUrl('${listino.prodCodice!.toUpperCase()}.png');
-    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -351,12 +371,34 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-          _sizedContainer(CachedNetworkImage(
-            imageUrl: imageUrl,
-            placeholder: (context, url) =>
-            const CircularProgressIndicator(),
-            errorWidget: (context, url, error) => const Icon(Icons.error),
-          )),
+          // _sizedContainer(CachedNetworkImage(
+          //   imageUrl: listino.imageUrl ?? '',
+          //   placeholder: (context, url) =>
+          //   const CircularProgressIndicator(),
+          //   errorWidget: (context, url, error) => const UiIcons.error,
+          // )
+          // ),
+            if (listino.imageUrl == null || listino.imageUrl!.isEmpty)
+              Container(
+                width: 150,
+                height: 150,
+                color: Colors.grey[50],
+                child:  Center(
+                  child: Image.asset('assets/images/no_picture.png'),
+                ),
+              )
+            else
+              _sizedContainer(
+                CachedNetworkImage(
+                  imageUrl: listino.imageUrl!,
+                  width: 150,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) =>
+                  const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) =>  UiIcons.error,
+                ),
+              ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18,0,18,0),
@@ -366,6 +408,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
                 children: [
                 Text(listino.prodDenominazione!,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: Colors.grey.shade800)),
                 price(listino),
+                Text(listino.prodDescrzione!),
                 SizedBox(height: 8,),
                 addElementWidget(listino)
                 ],),
@@ -392,7 +435,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
           imageUrl: imageUrl,
           placeholder: (context, url) =>
           const CircularProgressIndicator(),
-          errorWidget: (context, url, error) => const Icon(Icons.error),
+          errorWidget: (context, url, error) =>  UiIcons.error,
         )),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -413,23 +456,26 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
       mainAxisAlignment:MainAxisAlignment.spaceEvenly ,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        IconButton(icon: Container(
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(70),
-                border: Border.all(width: 2, color: Colors.blueGrey)),
-            child: Icon(FontAwesomeIcons.minus,size: 28,color: Colors.grey,)),onPressed: removeElementToList(listino),),
+        IconButton(icon: Icon(LineAwesomeIcons.minus_circle),onPressed: removeElementToList(listino)),
+        // IconButton(icon: Container(
+        //     decoration: BoxDecoration(
+        //         borderRadius: BorderRadius.circular(70),
+        //         border: Border.all(width: 2, color: Colors.blueGrey)),
+        //     child: Icon(UiIcons.minusIco,size: 28,color: Colors.grey,)),
+        //   onPressed: removeElementToList(listino),),
         SizedBox(width: 10,),
           Text(_listCart[listino].toString(),style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),),
         SizedBox(width: 10,),
-        IconButton(icon: Container(
-            decoration: BoxDecoration(
-                color: Colors.lightBlueAccent,
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(width: 5, color: Colors.lightBlueAccent)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.black,)),onPressed: addElementToList(listino),)
+        IconButton(icon: Icon(LineAwesomeIcons.plus_circle), onPressed: addElementToList(listino),)
+        // IconButton(icon: Container(
+        //     decoration: BoxDecoration(
+        //         color: Colors.lightBlueAccent,
+        //         borderRadius: BorderRadius.circular(100),
+        //         border: Border.all(width: 5, color: Colors.lightBlueAccent)),child: UiIcons.plys),onPressed: addElementToList(listino),)
 
       ],
     )
-        :MaterialButton(onPressed: addFirstElement(listino),child: Icon(FontAwesomeIcons.cartPlus),)
+        :MaterialButton(onPressed: addFirstElement(listino),child: Icon(LineAwesomeIcons.add_to_shopping_cart),)
 
     );
   }
@@ -441,19 +487,24 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
         mainAxisAlignment:MainAxisAlignment.spaceEvenly ,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          IconButton(icon: Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(70),
-                  border: Border.all(width: 2, color: Colors.teal[900]!)),
-              child: Icon(FontAwesomeIcons.minus,size: 28,color: Colors.black54,)),onPressed: ()=>removeElementToList(listino),),
+          IconButton(icon: UiIcons.minus,onPressed: ()=>removeElementToList(listino)),
+
+          // IconButton(icon: Container(
+          //     decoration: BoxDecoration(
+          //         borderRadius: BorderRadius.circular(70),
+          //         border: Border.all(width: 2, color: Colors.teal[900]!)),
+          //     child: Icon(UiIcons.minusIco,size: 28,color: Colors.black54,)),onPressed: ()=>removeElementToList(listino),),
           SizedBox(width: 10,),
           Text(_listCart.entries.firstWhere((element) => element.key.sku==listino.sku).value.toString(),style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),),
+          // GestureDetector(
+          //     onTap:()=>_displayTextInputDialog(context,listino),
+          //     child: Text(_listCart.entries.firstWhere((element) => element.key.sku==listino.sku).value.toString(),style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),)),
           SizedBox(width: 10,),
           IconButton(icon: Container(
               decoration: BoxDecoration(
                   color: Colors.teal[800],
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(width: 5, color: Colors.teal[800]!)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.white70,)),onPressed: ()=>addElementToList(listino),)
+                  border: Border.all(width: 5, color: Colors.teal[800]!)),child: UiIcons.plus),onPressed: ()=>addElementToList(listino),)
 
         ],
       ) : Padding(
@@ -464,18 +515,22 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
                 side:  BorderSide(
                     width: 1, // the thickness
                     color: Colors.teal[800]! // the color of the border
-                )
+                ),
+              backgroundColor: Colors.white
             ),
             onPressed:(){addFirstElement(listino);},
           child:
+
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                Icon(FontAwesomeIcons.cartPlus,color: Colors.teal[800]),
-                SizedBox(width: 20,),
-                Text("ADD",style: TextStyle(fontSize: 22,color:Colors.teal[800]))],)
-          // ListTile(title: Text("ADD",style: TextStyle(fontSize: 18,color:Colors.green)),leading:  Icon(FontAwesomeIcons.cartPlus,color: Colors.green),)
+                UiIcons.cartShoppingAdd,
+                // SizedBox(width: 20,),
+                Text("ADD",style: TextStyle(fontSize: 16,color:Colors.teal[800])),
+                  SizedBox(width: 20)],
+                )
+          // ListTile(title: Text("ADD",style: TextStyle(fontSize: 18,color:Colors.green)),leading:  UiIcons.cartPlusIco,color: Colors.green),)
         ),
       ),
     );
@@ -523,7 +578,7 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(
@@ -544,6 +599,27 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
     });
   }
 
+  Widget _buildChipValues(){
+    List<Widget> listChips=[];
+    _listCategoriaProdotto!.forEach((element) {
+      listChips.add(FilterChip(
+        label: Text(element.descrizione!),
+        selected: filters.contains(element),
+        onSelected: (bool selected) {
+          setState(() {
+            if (selected) {
+              filters.add(element);
+            } else {
+              filters.remove(element);
+            }
+          });
+        },
+      ));
+    });
+    return Wrap(
+        spacing: 5.0,
+        children:listChips);
+  }
 
   goToCart(){
     Navigator.push(context, MaterialPageRoute(
@@ -585,247 +661,50 @@ class _ListinoUtenteScreenState extends ConsumerState<ListinoUtenteScreen> {
     super.dispose();
   }
 
-  /// DISMISSED
-  // Widget _createList2(BuildContext context) {
-  //   if (_isLoading) {
-  //     return AppUtils.loader(context);
-  //   }
-  //   if (this._filteredValues.isEmpty) {
-  //     return AppUtils.emptyList(context,FontAwesomeIcons.userSlash);
-  //   }
-  //   var list = GridView.builder(
-  //       shrinkWrap: true,
-  //       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-  //           maxCrossAxisExtent: 300,
-  //           childAspectRatio:4/5,
-  //           crossAxisSpacing: 15,
-  //           mainAxisSpacing: 10
-  //       ),
-  //       itemCount: _filteredValues.length,
-  //       itemBuilder: (context, position) {
-  //         return _buildChildRow(context, _filteredValues[position], position);
-  //       });
-  //
-  //   return RefreshIndicator(child: list, onRefresh: _refresh,strokeWidth: 3,);
-  // }
-  //
-  // Widget _buildChildRow2(BuildContext context, ListinoProdottiExt listino, int position){
-  //   if(checkElementInCart(listino)){
-  //     debugPrint("true");
-  //   }else{
-  //     false;
-  //   }
-  //   return Card(
-  //     elevation: 3,
-  //     child: Container(
-  //       // margin: EdgeInsets.symmetric(vertical: 12,horizontal: 10),
-  //       decoration: BoxDecoration(
-  //         borderRadius: BorderRadius.circular(10),
-  //         color: Colors.white,
-  //       ),
-  //
-  //       child: Column(
-  //         children: [
-  //           Flexible(
-  //             child: InkWell(
-  //               onTap: () {
-  //                 addElementToList(listino);
-  //               },
-  //               child: Container(
-  //
-  //                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-  //                   color: Colors.white,),
-  //                 child: Padding(
-  //                   padding: const EdgeInsets.symmetric(horizontal: 15.0),
-  //                   child:  drawItem(listino,position),
-  //
-  //                   // Column(
-  //                   //   mainAxisSize: MainAxisSize.max,
-  //                   //   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   //   children: [
-  //                   //     // SizedBox(height: 8,),
-  //                   //     // Text(utentiList![index].toJson().toString()),
-  //                   //     //  capitalized(listino),
-  //                   //     drawItem(listino,position),
-  //                   //     // denominazione(listino),
-  //                   //     // SizedBox(height: 8,),
-  //                   //     // Flexible(child: Text("${listino.prodDescrzione!}\n${listino.prodQuantita} ${listino.prodUnimisCodice}",style: TextStyle(fontSize: 14)),flex: 2,),
-  //                   //     // Expanded(child: Text("${listino.prodQuantita} ${listino.prodUnimisCodice}",style: TextStyle(fontSize: 14),)),
-  //                   //     // price(listino),
-  //                   //   ],
-  //                   // ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           Container(
-  //             margin: EdgeInsets.symmetric(horizontal: 20),
-  //             height: 60,
-  //             decoration: BoxDecoration(color: Colors.white70,
-  //                 border: Border(top: BorderSide(width: 1.0, color: Colors.lightBlue.shade600))),
-  //             child:checkElementInCart(listino)?
-  //             Row(
-  //               mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-  //               crossAxisAlignment: CrossAxisAlignment.center,
-  //               children: [
-  //                 IconButton(icon: Container(
-  //                     decoration: BoxDecoration(
-  //                         borderRadius: BorderRadius.circular(70),
-  //                         border: Border.all(width: 2, color: Colors.blueGrey)),
-  //                     child: Icon(FontAwesomeIcons.minus,size: 28,color: Colors.grey,)),onPressed: ()=>removeElementToList(listino),),
-  //
-  //
-  //                 // Text(_listCart[listino].toString() ??'',style: TextStyle(fontSize: 24),),
-  //                 // IconButton(icon: Container(
-  //                 //     decoration: BoxDecoration(
-  //                 //         borderRadius: BorderRadius.circular(100),
-  //                 //         border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 28,color: Colors.green,)),onPressed: ()=>addElementToList(listino),)
-  //                 // IconButton(icon: Container(
-  //
-  //                 // decoration: BoxDecoration(
-  //                 //     color: Colors.grey,
-  //                 //     borderRadius: BorderRadius.circular(100),
-  //                 //     border: Border.all(width: 4, color: Colors.white)),
-  //                 // child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.black54,)),onPressed: ()=>removeElementToList(listino),),
-  //                 SizedBox(width: 10,),
-  //                 Text(_listCart.entries.firstWhere((element) => element.key.sku==listino.sku).value.toString()),
-  //                 SizedBox(width: 10,),
-  //                 IconButton(icon: Container(
-  //                     decoration: BoxDecoration(
-  //                         color: Colors.lightBlueAccent,
-  //                         borderRadius: BorderRadius.circular(100),
-  //                         border: Border.all(width: 5, color: Colors.lightBlueAccent)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.black,)),onPressed: ()=>addElementToList(listino),)
-  //
-  //               ],
-  //             ) : TextButton(
-  //               onPressed:(){addFirstElement(listino);},
-  //               child: Row(
-  //                 mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-  //                 crossAxisAlignment: CrossAxisAlignment.center,
-  //                 children: [
-  //                   Container(
-  //                       child: Icon(FontAwesomeIcons.cartPlus,color: Colors.green,size: 30,)),
-  //                   Expanded(child: Text("Aggiungi al carrello",style: TextStyle(fontSize: 16,color:Colors.green),)),
-  //
-  //                 ],
-  //               ),
-  //             ),
-  //           )
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  //
-  // }
-  //
-  // Widget drawItem(ListinoProdottiExt listino,int position){
-  //
-  //   if (listImages.any((val) => val.name.split('.')[0] == listino.prodCodice!.toUpperCase())) {
-  //     imageUrl = supabase
-  //         .storage
-  //         .from('public-images')
-  //         .getPublicUrl('${listino.prodCodice!.toUpperCase()}.png');
-  //   }
-  //
-  //   int pos = position%4;
-  //   String image ="assets/images/png${pos}.png";
-  //   return Container(
-  //     height: 180,
-  //     width: 200,
-  //     //     decoration:BoxDecoration(
-  //     // image:
-  //     // DecorationImage(
-  //     //   scale: 3.7,
-  //     // image: AssetImage(image),
-  //     // fit: BoxFit.none)
-  //     //     ),
-  //     child: Stack(
-  //         children: <Widget>[
-  //           Center(
-  //             child: _sizedContainer(CachedNetworkImage(
-  //               imageUrl: imageUrl,
-  //               placeholder: (context, url) =>
-  //               const CircularProgressIndicator(),
-  //               errorWidget: (context, url, error) => const Icon(Icons.error),
-  //             )),
-  //           ),
-  //           Column(
-  //             crossAxisAlignment: CrossAxisAlignment.center,
-  //             mainAxisAlignment: MainAxisAlignment.center,
-  //             children: [
-  //               denominazione(listino),
-  //               Expanded(child: Text("${listino.prodDescrzione!}\n${listino.prodQuantita} ${listino.prodUnimisCodice!.toLowerCase()}",style: TextStyle(fontSize: 14)),flex: 2,),
-  //               price(listino),
-  //             ],)
-  //         ]
-  //     )
-  //
-  //     ,);
-  // }
-  //
-  // Widget capitalized(ListinoProdottiExt item){
-  //   String t='';
-  //   List<String> lt =  item.prodDenominazione!.trim().split(" ");
-  //   lt.forEach((element) { t+=element[0];});
-  //   return Container(
-  //       height: 50,
-  //       decoration:BoxDecoration(
-  //           borderRadius: BorderRadius.circular(8),
-  //           border: Border.all(width: 0.5, color: Colors.black)), child: Padding(
-  //     padding: const EdgeInsets.only(left:38.0,top:5,right: 38,bottom: 5),
-  //     child: FittedBox(fit:BoxFit.fitWidth,child: Text(t,style: TextStyle(fontSize: 44),)),
-  //   ));
-  // }
 
-  // Widget rowButtons(ListinoProdottiExt listino){
-  //   return Container(
-  //     height: 60,
-  //     decoration: BoxDecoration(color: Colors.white70,border:
-  //     Border(top: BorderSide(width: 1.0, color: Colors.lightBlue.shade600))),
-  //     child:checkElementInCart(listino) ?
-  //     Row(
-  //       mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-  //       crossAxisAlignment: CrossAxisAlignment.center,
-  //       children: [
-  //         IconButton(icon: Container(
-  //
-  //             decoration: BoxDecoration(
-  //                 color: Colors.white,
-  //                 borderRadius: BorderRadius.circular(50),
-  //                 border: Border.all(width: 4, color: Colors.white)),
-  //             child: Icon(FontAwesomeIcons.minus,size: 20,color: Colors.black54,)),onPressed: ()=>removeElementToList(listino),),
-  //         SizedBox(width: 10,),
-  //         Text("${_listCart.entries.firstWhere((element) => element.key.sku==listino.sku).value }" ,style: TextStyle(fontSize: 24),),
-  //         SizedBox(width: 10,),
-  //         IconButton(icon: Container(
-  //             decoration: BoxDecoration(
-  //                 color: Colors.lightBlueAccent,
-  //                 borderRadius: BorderRadius.circular(100),
-  //                 border: Border.all(width: 5, color: Colors.lightBlueAccent)),child: Icon(FontAwesomeIcons.plus,size: 20,color: Colors.black,)),onPressed: ()=>addElementToList(listino),)
-  //
-  //         // IconButton(icon: Container(
-  //         //     decoration: BoxDecoration(
-  //         //         borderRadius: BorderRadius.circular(100),
-  //         //         border: Border.all(width: 2, color: Colors.red)),
-  //         //     child: Icon(FontAwesomeIcons.minus,size: 28,color: Colors.grey,)),onPressed: ()=>removeElementToList(listino),),
-  //         // Text(_listCart[listino].toString() ??'',style: TextStyle(fontSize: 24),),
-  //         // IconButton(icon: Container(
-  //         //     decoration: BoxDecoration(
-  //         //         borderRadius: BorderRadius.circular(100),
-  //         //         border: Border.all(width: 2, color: Colors.green)),child: Icon(FontAwesomeIcons.plus,size: 28,color: Colors.green,)),onPressed: ()=>addElementToList(listino),)
-  //
-  //       ],
-  //     ) : TextButton(
-  //       onPressed:addFirstElement(listino),
-  //       child: Row(
-  //         mainAxisAlignment:MainAxisAlignment.spaceBetween ,
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           Expanded(child: Text("Aggiungi al carrello",style: TextStyle(fontSize: 16,color:Colors.green),)),
-  //           Icon(FontAwesomeIcons.cartPlus,color: Colors.green,size: 30,),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  Future<void> _displayTextInputDialog(BuildContext context,ListinoProdottiExt listino) async {
+    _textFieldQuantityController.clear();
+    String valueText=(_listCart.entries.firstWhere((element) => element.key.sku==listino.sku).value.toString());
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Inserisci la quantità'),
+            content: TextField(
+              onChanged: (value) {
+                setState(() {
+                  valueText = value;
+                });
+              },
+              controller: _textFieldQuantityController,
+              decoration:
+               InputDecoration(hintText: valueText),
+            ),
+            actions: <Widget>[
+              MaterialButton(
+                // color: Colors.red,
+                // textColor: Colors.white,
+                child: const Text('CANCEL'),
+                onPressed: () {
+                  setState(() {
+                    Navigator.pop(context);
+                  });
+                },
+              ),
+              MaterialButton(
+                // color: Colors.green,
+                // textColor: Colors.white,
+                child: const Text('OK'),
+                onPressed: () {
+                  setState(() {
+                    _listCart[_listCart.keys.where((element) => element.sku==listino.sku).first]=int.parse(valueText);
+                    // _listCart[item]=val;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        });
+  }
 }

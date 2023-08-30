@@ -40,6 +40,9 @@ class OrdineExt extends Ordine {
   @JsonKey(name: 'tipo_fiscale_descrizione')
   String? tipoFiscaleDescrizione;
 
+  @JsonKey(name: 'numero_ddt')
+  String? numeroDDT;
+
   // @override
   // OrdineExt.fromDBMap(Map map) {
   //   this.utenteName = map['utente_name'];

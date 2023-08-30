@@ -5,6 +5,8 @@ import 'package:bufalabuona/screens/prodotti/prodotti_crud.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../utils/ui_icons.dart';
+
 
 class LovProdottiFragment extends StatefulWidget {
   final String appbarTitle;
@@ -20,7 +22,7 @@ class LovProdottiFragment extends StatefulWidget {
         this.styleColor});
 
   @override
-  _LovProdottiFragmentState createState() => new _LovProdottiFragmentState();
+  _LovProdottiFragmentState createState() =>  _LovProdottiFragmentState();
 }
 
 class _LovProdottiFragmentState extends State<LovProdottiFragment> {
@@ -108,7 +110,7 @@ class _LovProdottiFragmentState extends State<LovProdottiFragment> {
       floatingActionButton: this.widget.showInsert
           ? new FloatingActionButton(
         elevation: 0.0,
-        child:Icon(FontAwesomeIcons.plus),
+        child:Icon(UiIcons.plusIco),
         onPressed: _editProdotti,
       )
           : new Container(
@@ -128,7 +130,7 @@ class _LovProdottiFragmentState extends State<LovProdottiFragment> {
           border: InputBorder.none,
           hintText:"Nome Punto Vendita",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return new Card(

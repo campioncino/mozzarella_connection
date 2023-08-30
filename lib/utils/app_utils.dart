@@ -7,7 +7,11 @@ import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/utente.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/database_helper.dart';
+import 'package:bufalabuona/utils/overlapping_icons.dart';
+import 'package:bufalabuona/utils/ui_icons.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -19,8 +23,18 @@ import 'package:sqflite/sqflite.dart';
 
 import '../model/cart_item_ext.dart';
 import '../model/listino_prodotti_ext.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'package:crypto/crypto.dart';
+
+import '../model/ordine_ext.dart';
+
 
 class AppUtils {
+  static AndroidOptions _getAndroidOptions() => AndroidOptions(
+    encryptedSharedPreferences: true,
+  );
+  static final secureStorage =  FlutterSecureStorage(aOptions: _getAndroidOptions());
 
   static late Utente utente;
   static late PuntoVendita puntoVendita;
@@ -64,6 +78,16 @@ class AppUtils {
     key.currentState!.showSnackBar(snackBar);
   }
 
+  static void successSnackBar(GlobalKey<ScaffoldMessengerState> key,
+      String message) {
+    if (key.currentState == null || !key.currentState!.mounted) {
+      return;
+    }
+    final snackBar = SnackBar(
+      content: Text(message, style: TextStyle(color: Colors.green),),);
+    key.currentState!.showSnackBar(snackBar);
+  }
+
   static Widget loader(BuildContext context) {
     return SizedBox(
       height: MediaQuery
@@ -81,18 +105,18 @@ class AppUtils {
       height: MediaQuery
           .of(context)
           .size
-          .height / 1.4,
+          .height / 1.9,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 100, color: Colors.black54,),
-          SizedBox(height: 20,),
-          const Center(child: Text("Nessun Elemento",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontStyle: FontStyle.italic, fontSize: 18.0),
-          ),),
-        ],
+        children:  [
+            OverlappingIncons(iconBase: Icon(icon,size: 88,color: Colors.black45,), iconOver: Icon(UiIcons.slashIco,size: 100,color: Colors.black45), size: 100,fullOverlapping: true),
+            SizedBox(height: 20,),
+            const Center(child: Text("Nessun Elemento",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 18.0),
+            ),),
+          ],
       ),
     );
   }
@@ -163,6 +187,15 @@ class AppUtils {
     initializeDateFormatting();
     try {
       final dateFormatter = new DateFormat('dd-MM-yyyy HH:mm:ss');
+      return dateFormatter.format(DateTime.parse(timestamp));
+    } catch (e) {}
+    return null;
+  }
+
+  static  convertTimestamptzToStringDateOld(String timestamp){
+    initializeDateFormatting();
+    try {
+      final dateFormatter = new DateFormat('dd-MM-yyyy HH:mm:ss');
       final timestamptzsFormatter = new DateFormat("yyyy-MM-ddTHH:mm:ssZ");
       DateTime time = timestamptzsFormatter.parse(timestamp, true);
       return dateFormatter.format(time.toLocal());
@@ -202,7 +235,7 @@ class AppUtils {
 
   static dynamic removeNull(dynamic params) {
     if (params is Map) {
-      var _map = {};
+      Map<String, dynamic> _map = {};
       params.forEach((key, value) {
         var _value = removeNull(value);
         if (_value != null) {
@@ -235,7 +268,7 @@ class AppUtils {
     prefs.remove("cart");
   }
 
-  static void storeCartItems(Map<ListinoProdottiExt, int> map) async {
+  static void storeCartItems(Map<ListinoProdottiExt, num> map) async {
     final prefs = await SharedPreferences.getInstance();
     String cart = convertCartToJson(map);
     prefs.setString("cart", cart);
@@ -259,6 +292,17 @@ class AppUtils {
     final prefs = await SharedPreferences.getInstance();
     String? fcmToken = prefs.getString("fcmToken");
     return fcmToken;
+  }
+
+
+  /// GESTIONE PIN LOGIN-- SECURE STORAGE
+  static Future storePassword(String pinCode) async {
+    await secureStorage.write(key: 'password', value:pinCode);
+  }
+
+  static Future<String?> retrievePassword() async {
+    String? password = await secureStorage.read(key: 'password');
+    return password;
   }
 
   static Future<Map<String,dynamic>> getDeviceInfo() async {
@@ -328,14 +372,14 @@ class AppUtils {
     };
   }
 
-  static String convertCartToJson(Map<ListinoProdottiExt,int> cart){
+  static String convertCartToJson(Map<ListinoProdottiExt,num> cart){
     List<String> json=[];
     cart.forEach((key, value) {
       ListinoProdottiExt p= key;
       Map<String,dynamic> pj = p.toJson();
       json.add('{"key":'+jsonEncode(pj)+","+ '"value":'+value.toString()+"}");
     });
-    print(json.toString());
+    debugPrint(json.toString());
     return json.toString();
   }
 
@@ -355,10 +399,26 @@ class AppUtils {
     Map<ListinoProdottiExt,int> result ={};
     carrello.forEach((cart) {
       listino.forEach((list) { if(list.sku == cart.prodId){
-        result[list]=int.parse(cart.quantita.toString() ?? '0');
+        result[list]=int.parse(cart.quantita.toString());
       }});
     });
     return result;
   }
+
+  static Future<bool> isConnected() async {
+    try {
+      ConnectivityResult result = await Connectivity().checkConnectivity();
+      return result != ConnectivityResult.none;
+    } catch (error) {}
+    return true;
+  }
+
+  static String calculateHash(OrdineExt values){
+    var bytes1 = utf8.encode(values.toJson().toString());
+    String hash256= sha256.convert(bytes1).toString();
+    return hash256;
+  }
+
+
 
 }

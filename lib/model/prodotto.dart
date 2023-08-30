@@ -31,6 +31,8 @@ class Prodotto extends WSResponse {
   num? quantita;
   @JsonKey(name: 'cat_prodotto_codice')
   String? catProdottoCodice;
+  @JsonKey(name: 'image_url')
+  String? imageUrl;
 
   @override
   Prodotto.fromDBMap(Map map) {
@@ -43,6 +45,7 @@ class Prodotto extends WSResponse {
     this.dtInserimento = map['dt_inserimento'];
     this.quantita = map['quantita'];
     this.catProdottoCodice = map['cat_prodotto_codice'];
+    this.imageUrl = map['image_url'];
   }
 
   Map<String, dynamic> tableMap() {
@@ -58,6 +61,7 @@ class Prodotto extends WSResponse {
     map['dt_inserimento']=this.dtInserimento ;
     map['quantita']=this.quantita ;
     map['cat_prodotto_codice']=this.catProdottoCodice;
+    map['image_url']=this.imageUrl;
     return map;
   }
 }

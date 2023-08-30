@@ -5,8 +5,7 @@ import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../model/categoria.dart';
-import '../model/listino.dart';
+
 
 class CategorieProdottiRestService {
   BuildContext context;
@@ -23,7 +22,7 @@ class CategorieProdottiRestService {
     try{
       var response = await Supabase.instance.client
           .from(CategoriaProdotto.TABLE_NAME)
-          .select()
+          .select('*')
           ;
       if(response!=null) {
         result = AppUtils.parseWSResponse(response);

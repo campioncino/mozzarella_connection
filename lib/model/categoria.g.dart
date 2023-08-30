@@ -16,8 +16,9 @@ Categoria _$CategoriaFromJson(Map<String, dynamic> json) => Categoria()
   ..count = json['count'] as int?
   ..id = json['id'] as int?
   ..createdAt = json['created_at'] as String?
-  ..descrizione = json['description'] as String?
-  ..dtFinVal = json['dt_fin_val'] as String?;
+  ..descrizione = json['descrizione'] as String?
+  ..dtFinVal = json['dt_fin_val'] as String?
+  ..codice = json['codice'] as String?;
 
 Map<String, dynamic> _$CategoriaToJson(Categoria instance) {
   final val = <String, dynamic>{};
@@ -35,7 +36,8 @@ Map<String, dynamic> _$CategoriaToJson(Categoria instance) {
   writeNotNull('count', instance.count);
   writeNotNull('id', instance.id);
   writeNotNull('created_at', instance.createdAt);
-  writeNotNull('description', instance.descrizione);
+  writeNotNull('descrizione', instance.descrizione);
   writeNotNull('dt_fin_val', instance.dtFinVal);
+  writeNotNull('codice', instance.codice);
   return val;
 }

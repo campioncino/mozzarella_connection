@@ -9,6 +9,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../model/ordine_ext.dart';
+import '../../utils/ui_icons.dart';
 
 
 class StoricoOrdiniAdminScreen extends StatefulWidget {
@@ -43,13 +44,14 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
     setState(() {
       if (text.isEmpty) {
         _filteredValues.clear();
-        print(_values.toString());
+        debugPrint(_values.toString());
         _filteredValues.addAll(_values!);
       } else {
         List<OrdineExt> list = _values!.where((v) {
           return v.createdAt!.contains(text.toUpperCase())
               || v.statoCodice!.contains(text.toUpperCase())
-              || v.pvenditaDenominazione!.toUpperCase().contains(text.toUpperCase());
+              || v.pvenditaDenominazione!.toUpperCase().contains(text.toUpperCase())
+          || v.numero.toString().contains(text);
         }).toList();
         _filteredValues.clear();
         _filteredValues.addAll(list);
@@ -127,7 +129,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
               child: stackWidget()),
       //     floatingActionButton: FloatingActionButton(
       //     elevation: 0.0,
-      //     child:  const Icon(Icons.add),
+      //     child:  const Icon(UiIcons.addIco),
       //     // backgroundColor: const Color(0xFFE57373),
       //     onPressed: _goToInsert
       // ),
@@ -181,7 +183,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
       return AppUtils.loader(context);
     }
     if (this._filteredValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.shopSlash);
+      return AppUtils.emptyList(context,UiIcons.incomingIco);
     }
     var list = ListView.builder(
         itemCount: _filteredValues.length,
@@ -211,16 +213,16 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
                 child: InkWell(
                   onTap: ()=> _goToDetail(ordine),
                   child: ListTile(
-                    trailing: Icon(Icons.chevron_right),
+                    trailing: UiIcons.chevronRight,
                     title: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("Ordine #${ordine.numero} "),
-                            Text("del: ${AppUtils.convertTimestamptzToStringDate(ordine.createdAt??'').substring(0,10)?? ''}",
+                            Text("effettuato: ${AppUtils.convertTimestamptzToStringDate(ordine.createdAt??'')}",
                               // style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16),
                             ),
                           ],
@@ -232,6 +234,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
                         Text(ordine.pvenditaDenominazione??'',style: TextStyle(fontWeight: FontWeight.w800,fontSize: 16)),
                         Text("Totale ordine: ${ordine.total} €"),
                         Text("Stato: ${ordine.statoCodice?? ''}",style: TextStyle(fontWeight: FontWeight.w600)),
+                        if(ordine.statoCodice=='CONFERMATO') Text("confermato il: ${AppUtils.convertTimestamptzToStringDate(ordine.modifiedAt??'')}"),
                         Text("Consegna spedizione: ${AppUtils.formPostgresStringDate(ordine.dtConsegna?.toString().substring(0,10)?? '')}"),
                       ],
                     ),
@@ -284,7 +287,7 @@ class _StoricoOrdiniAdminScreenState extends State<StoricoOrdiniAdminScreen> {
           border: InputBorder.none,
           hintText:"Cerca per Nome",
           suffixIcon: IconButton(
-              icon: Icon(Icons.close), onPressed: () => onSearchButtonClear())),
+              icon: UiIcons.close, onPressed: () => onSearchButtonClear())),
     );
 
     return Card(

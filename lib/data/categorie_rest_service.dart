@@ -64,24 +64,44 @@ class CategorieRestService {
     }
   }
 
-  Future<bool> upsertCategoria(Categoria item) async{
+  // Future<bool> upsertCategoria(Categoria item) async{
+  //   try{
+  //     var response = await Supabase.instance.client
+  //         .from(Categoria.TABLE_NAME)
+  //         .upsert(item.tableMap())
+  //         ;
+  //     if (response.error == null) {
+  //       // throw "Update profile failed: ${response.error!.message}";
+  //       return true;
+  //     }else{
+  //       return false;
+  //     }
+  //
+  //   }catch(e){
+  //     debugPrint("error :${e.toString()}");
+  //
+  //     return false;
+  //   }
+  // }
+
+
+  Future<WSResponse> upsertCategoria(Categoria item) async{
+    WSResponse result=new WSResponse();
     try{
       var response = await Supabase.instance.client
           .from(Categoria.TABLE_NAME)
-          .upsert(item.tableMap())
-          ;
-      if (response.error == null) {
-        // throw "Update profile failed: ${response.error!.message}";
-        return true;
-      }else{
-        return false;
+          .upsert(AppUtils.removeNull(item.tableMap()))
+      ;
+      if(response!=null) {
+        result = AppUtils.parseWSResponse(response);
       }
-
     }catch(e){
-      debugPrint("error :${e.toString()}");
-
-      return false;
+      WSErrorResponse err = new WSErrorResponse();
+      err.message=e.toString();
+      result.errors ??= [];
+      result.errors!.add(err);
     }
+    return result;
   }
 
   }

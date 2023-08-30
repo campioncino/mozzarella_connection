@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
 class OverlappingIncons extends StatelessWidget {
-  final Icon? iconBase;
-  final Icon? iconOver;
+  final Widget? iconBase;
+  final Widget? iconOver;
   final Color? colorBase;
   final Color? colorOver;
   final double? size;
-  const OverlappingIncons({Key? key,required this.iconBase,required this.iconOver, this.colorBase,  this.colorOver, required this.size}) : super(key: key);
+  final bool? fullOverlapping;
+  const OverlappingIncons({Key? key,required this.iconBase,required this.iconOver, this.colorBase,  this.colorOver, required this.size, this.fullOverlapping}) : super(key: key);
 
 
   @override
   Widget build(BuildContext context) {
+    double ico1=1.2;
+    double ico2=0.01;
+    if(fullOverlapping!=null && fullOverlapping!){
+      ico1=1;
+      ico2=2;
+    }
     return SizedBox(
       width: size!,
       height: size!,
@@ -18,8 +25,8 @@ class OverlappingIncons extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Container(
-            width: size!*1.2,
-            height: size!*1.2,
+            width: size!*ico1,
+            height: size!*ico1,
             child: iconBase,
             // decoration: const BoxDecoration(
             //   color: Colors.white,
@@ -27,7 +34,7 @@ class OverlappingIncons extends StatelessWidget {
             // ),
           ),
           Container(
-            child: Container(child: iconOver,width: size!*0.01,height: size!*0.01,),
+            child: Container(child: iconOver,width: size!*ico2,height: size!*ico2,),
             // decoration: const BoxDecoration(
             //   color: Colors.white,
             //   shape: BoxShape.circle,

@@ -29,6 +29,9 @@ class Utente extends WSResponse {
   @JsonKey(name:'dt_fine_valida')
   String? dtFineValidita;
 
+
+
+
   @override
   Utente.fromDBMap(Map map) {
     this.profileId = map['profile_id'];
@@ -40,6 +43,7 @@ class Utente extends WSResponse {
     this.ruolo = map['ruolo'];
     this.dtFineValidita = map['dt_fine_validita'];
     this.confermato = map['confermato'];
+
   }
 
   Map<String, dynamic> tableMap() {

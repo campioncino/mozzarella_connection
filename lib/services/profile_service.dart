@@ -24,7 +24,7 @@
 //
 //       }
 //       setState(() {
-//         print(response.data);
+//         debugPrint(response.data);
 //         username = response.data?['username'] as String? ?? '';
 //         website = response.data?['website'] as String? ?? '';
 //         avatarUrl = response.data?['avatar_url'] as String? ?? '';

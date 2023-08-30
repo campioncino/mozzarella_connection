@@ -123,11 +123,11 @@ class _EnsureVisibleWhenFocusedState extends State<EnsureVisibleWhenFocused> wit
 
     // Find the object which has the focus
     final RenderObject object = context.findRenderObject()!;
-    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object)!;
+    final RenderAbstractViewport viewport = RenderAbstractViewport.of(object);
     assert(viewport != null);
 
     // Get the Scrollable state (in order to retrieve its offset)
-    ScrollableState scrollableState = Scrollable.of(context)!;
+    ScrollableState scrollableState = Scrollable.of(context);
     assert(scrollableState != null);
 
     // Get its offset

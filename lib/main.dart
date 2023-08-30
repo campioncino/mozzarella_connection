@@ -3,11 +3,12 @@ import 'dart:isolate';
 
 import 'package:bufalabuona/app_config.dart';
 import 'package:bufalabuona/app_launcher.dart';
+import 'package:bufalabuona/env/app_env.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,13 +25,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if(kIsWeb){
     await Firebase.initializeApp(
       options: FirebaseOptions(
-          apiKey: "AIzaSyDy9koGQ4-Oxq5oiaZyLBN3bHgJDNi0_Z4",
-          authDomain: "mozzarella-connection-a8589.firebaseapp.com",
-          projectId: "mozzarella-connection-a8589",
-          storageBucket: "mozzarella-connection-a8589.appspot.com",
-          messagingSenderId: "675275977106",
-          appId: "1:675275977106:web:64cb27a4a7f42fcc3b514b",
-          measurementId: "G-M99EMQ5ZFC"
+          apiKey: AppEnv().firebaseApiKey,
+          authDomain: AppEnv().firebaseAuthDomain,
+          projectId: AppEnv().firebaseProjectId,
+          storageBucket: AppEnv().firebaseStorageBucket,
+          messagingSenderId: AppEnv().firebaseMessagingSenderId,
+          appId: AppEnv().firebaseAppId,
+          measurementId: AppEnv().firebaseMesurementId
       ),
     );
   }else{
@@ -45,9 +46,13 @@ Future main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+      url: AppEnv().supabaseUrl,
+      anonKey: AppEnv().supabaseAnonKey,
+      authCallbackUrlHostname:AppEnv().myAuthRedirectUri
+  );  /// Initialize Crash report
 
-  await Supabase.initialize(url:  dotenv.env['SUPABASE_URL']!, anonKey: dotenv.env['SUPABASE_ANON_KEY']!);  /// Initialize Crash report
+  await SupabaseAuth.initialize(authCallbackUrlHostname: AppEnv().myAuthRedirectUri, authFlowType: AuthFlowType.pkce);
 
   if (!kIsWeb) {
     if (kDebugMode) {
@@ -79,6 +84,10 @@ if(!kIsWeb) {
   }).sendPort);
 }
 
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   runZonedGuarded(() {
     // if(!kIsWeb){

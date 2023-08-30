@@ -33,7 +33,8 @@ ListinoProdottiExt _$ListinoProdottiExtFromJson(Map<String, dynamic> json) =>
       ..listNote = json['list_note'] as String?
       ..listFinVal = json['list_fin_val'] as String?
       ..listIniVal = json['list_ini_val'] as String?
-      ..prodUnimisDescrizione = json['prod_unimis_descrizione'] as String?;
+      ..prodUnimisDescrizione = json['prod_unimis_descrizione'] as String?
+      ..imageUrl = json['image_url'] as String?;
 
 Map<String, dynamic> _$ListinoProdottiExtToJson(ListinoProdottiExt instance) {
   final val = <String, dynamic>{};
@@ -68,5 +69,6 @@ Map<String, dynamic> _$ListinoProdottiExtToJson(ListinoProdottiExt instance) {
   writeNotNull('list_fin_val', instance.listFinVal);
   writeNotNull('list_ini_val', instance.listIniVal);
   writeNotNull('prod_unimis_descrizione', instance.prodUnimisDescrizione);
+  writeNotNull('image_url', instance.imageUrl);
   return val;
 }

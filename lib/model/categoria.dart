@@ -20,17 +20,21 @@ class Categoria extends WSResponse {
   int? id;
   @JsonKey(name: 'created_at')
   String? createdAt;
-  @JsonKey(name: 'description')
+  @JsonKey(name: 'descrizione')
   String? descrizione;
   @JsonKey(name: 'dt_fin_val')
   String? dtFinVal;
+  @JsonKey(name: 'codice')
+  String? codice;
+
 
   @override
   Categoria.fromDBMap(Map map) {
     this.id = map['id'];
     this.createdAt = map['created_at'];
-    this.descrizione = map['description'];
+    this.descrizione = map['descrizione'];
     this.dtFinVal = map['dt_fin_val'];
+    this.codice = map['codice'];
   }
 
   Map<String, dynamic> tableMap() {
@@ -39,8 +43,9 @@ class Categoria extends WSResponse {
       map['id'] = this.id;
     }
     map['created_at']=this.createdAt ;
-    map['description']=this.descrizione ;
+    map['descrizione']=this.descrizione ;
     map['dt_fin_val']=this.dtFinVal ;
+    map['codice']=this.codice;
     return map;
   }
 }

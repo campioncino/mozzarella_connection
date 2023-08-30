@@ -125,16 +125,16 @@ class LovWidget<T> extends StatelessWidget {
     }
 
     if (this.subtitleField == null) {
-      return new Container();
+      return  Container();
     }
 
     if (this.object == null) {
-      return new Container();
+      return  Container();
     }
 
     return Text(
       this.object != null ? '${this.object.toJson()[this.subtitleField]}' : '',
-      style: new TextStyle(
+      style:  TextStyle(
         fontSize: 15.0,
         fontStyle: FontStyle.italic,
       ),
@@ -153,7 +153,7 @@ class LovWidget<T> extends StatelessWidget {
     }
     return Text(
       this.object != null ? '${this.object.toJson()[this.optionField]}' : '',
-      style: new TextStyle(
+      style:  TextStyle(
         fontSize: 15.0,
         fontStyle: FontStyle.italic,
       ),
@@ -191,7 +191,7 @@ class LovWidget<T> extends StatelessWidget {
 
     return Text(
       '${this.object.toJson()[this.titleField]}',
-      style: new TextStyle(
+      style:  TextStyle(
         fontSize: 16.0,
         fontStyle: FontStyle.normal,
       ),

@@ -42,20 +42,21 @@ class _BufalaRouterState extends State<BufalaRouter> {
           child:Stack(children: [
               Container(color: Colors.white,
               height: MediaQuery.of(context).size.height/2,),
-              Center(child: Image.asset("assets/images/bb.png", fit: BoxFit.fill,)),
-              Positioned(
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(context).size.height/6,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text("AZIENDA AGRICOLA",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w400,fontSize: 18),),
-                    Text("GIANCARLO D'ANGELO",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w400,fontSize: 22))
-                  ],
-                ),
-              ),
+              Center(child: Image.asset("assets/images/bb2.png", fit: BoxFit.fill,)),
+              // Positioned(
+              //   left: 20,
+              //   right: 20,
+              //   bottom: MediaQuery.of(context).size.height/5,
+              //   // top: MediaQuery.of(context).size.height/7,
+              //   child: Column(
+              //     mainAxisAlignment: MainAxisAlignment.center,
+              //     crossAxisAlignment: CrossAxisAlignment.center,
+              //     children: [
+              //       Text("AZIENDA AGRICOLA",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w400,fontSize: 18),),
+              //       Text("GIANCARLO D'ANGELO",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w400,fontSize: 22))
+              //     ],
+              //   ),
+              // ),
 
             ],)
 
@@ -82,7 +83,10 @@ class _BufalaRouterState extends State<BufalaRouter> {
     if (session != null && session.user!=null) {
       // Navigator.of(context).pushReplacementNamed('/router');
       _utente = await _loadUtente(session.user.id);
-      initUtente();
+      if(_utente==null){
+        Navigator.of(context).pushReplacementNamed('/signIn');
+      }else{
+      initUtente();}
     } else {
       Navigator.of(context).pushReplacementNamed('/signIn');
     }

@@ -2,7 +2,6 @@ import 'package:bufalabuona/model/punto_vendita.dart';
 import 'package:bufalabuona/model/ws_error_response.dart';
 import 'package:bufalabuona/model/ws_response.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

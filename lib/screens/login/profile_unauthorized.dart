@@ -1,3 +1,4 @@
+import 'package:bufalabuona/data/profiles_rest_service.dart';
 import 'package:bufalabuona/main.dart';
 import 'package:bufalabuona/model/utente.dart';
 import 'package:bufalabuona/utils/app_utils.dart';
@@ -9,7 +10,10 @@ import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'package:supabase/supabase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '/components/auth_required_state.dart';
+import '../../model/profile.dart';
+import '../../utils/ui_icons.dart';
+
+// import '/components/auth_required_state.dart';
 
 
 class ProfileUnauthorizedScreen extends StatefulWidget {
@@ -23,6 +27,7 @@ class ProfileUnauthorizedScreen extends StatefulWidget {
 class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
   _ProfileUnauthorizedScreenState();
 
+  final scaffoldMessageKey = GlobalKey<ScaffoldMessengerState>();
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
 
@@ -33,6 +38,7 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
   // final _picker = ImagePicker();
 
   Utente? _utente;
+  Profile? _profile;
   User? _user;
   bool loadingProfile = true;
   bool isValid=false;
@@ -45,6 +51,9 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
   String? _phoneNumber;
   String? _fullName;
   Map<String?, dynamic>? _options;
+  bool? _operatorePuntoVendita;
+  String? _note='';
+
 
   var now = new DateTime.now();
 
@@ -70,6 +79,23 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
   }
 
 
+  // initUtente() async {
+  //
+  //   if(_options!=null){
+  //     _options = this.widget.options;
+  //     if(_options!['utente']!=null){
+  //       _utente = _options!['utente'];
+  //       loadingProfile=false;
+  //     }
+  //     else{
+  //      await _loadProfile(_user!.id);
+  //     }
+  //   }else{
+  //     debugPrint("qua non ci dovrei manco passare");
+  //     // _utente= await _loadUtente(user!.id);
+  //   }
+  //   initProfile();
+  // }
   initUtente() async {
 
     if(_options!=null){
@@ -77,9 +103,7 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
       if(_options!['utente']!=null){
         _utente = _options!['utente'];
         loadingProfile=false;
-      }
-      else{
-        _loadProfile(_user!.id);
+       await _loadProfile(_user!.id);
       }
     }else{
       debugPrint("qua non ci dovrei manco passare");
@@ -88,40 +112,49 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
     initProfile();
   }
 
+
   initProfile(){
     setState(() {
-        _email = _utente!.email;
+      _email = _utente!.email;
       _username = _utente!.username;
       _phoneNumber = _utente!.phoneNumber;
       _fullName = _utente!.name;
       _usernameController = new TextEditingController(text: _username  );
       _phoneNumberController = new TextEditingController(text: _phoneNumber);
       _fullNameController = new TextEditingController(text: _fullName);
+      _operatorePuntoVendita = _profile!.operatorePuntoVendita!=null ? _profile!.operatorePuntoVendita!: true;
+      _note = _profile!.note ;
     });
   }
 
-  Future<void> _loadProfile(String userId) async {
-    try {
-      final response = await supabase.from('profiles')
-          .select(
-          ).eq('id', userId)
-          .maybeSingle()
-          ;
-      if (response == null) {
-        throw "Load profile failed";
-      }
-    } catch (e) {
-      debugPrint("error :${e.toString()}");
-      // showMessage(e.toString());
-    } finally {
-      setState(() {
-        loadingProfile = false;
-      });
-    }
+  _loadProfile(String userId) async {
+
+    _profile = await ProfileRestService.internal(context).getProfile(userId);
   }
 
+  // Future<void> _loadProfile(String userId) async {
+  //   try {
+  //     final response = await supabase.from('profiles')
+  //         .select(
+  //         ).eq('id', userId)
+  //         .maybeSingle()
+  //         ;
+  //     if (response == null) {
+  //       throw "Load profile failed";
+  //     }
+  //   } catch (e) {
+  //     debugPrint("error :${e.toString()}");
+  //     // showMessage(e.toString());
+  //   } finally {
+  //     setState(() {
+  //       loadingProfile = false;
+  //     });
+  //   }
+  // }
+
   Future _onSignOutPress(BuildContext context) async {
-    await Supabase.instance.client.auth.signOut();
+    // await Supabase.instance.client.auth.signOut();
+    await supabase.auth.signOut();
     Navigator.pushNamedAndRemoveUntil(context, '/signIn', (route) => false);
   }
 
@@ -187,7 +220,8 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
 
   Future _onUpdateProfilePress(BuildContext context) async {
     if(!isValid){
-      showMessage('Compila tutti i campi obbligatri');
+      AppUtils.errorSnackBar(scaffoldMessageKey, 'Compila tutti i campi obbligatri');
+      // showMessage('Compila tutti i campi obbligatri');
       _updateProfileBtnController.reset();
     }else{
     try {
@@ -198,7 +232,9 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
         'updated_at': DateTime.now().toString(),
         'phone_number': _phoneNumber,
         'full_name':_fullName,
-        'email':_email
+        'email':_email,
+        'operatore_punto_vendita':_operatorePuntoVendita,
+        'note':_note
       };
 
       final response = await supabase
@@ -219,7 +255,7 @@ class _ProfileUnauthorizedScreenState extends State<ProfileUnauthorizedScreen> {
   }
 
   void showMessage(String message) {
-    final snackbar = SnackBar(content: Text(message,style: TextStyle(color: Colors.greenAccent),),backgroundColor: Colors.white70,);
+    final snackbar = SnackBar(content: Text(message,style: TextStyle(color: Colors.green[900]),),backgroundColor: Colors.white70,);
     ScaffoldMessenger.of(scaffoldKey.currentContext!).showSnackBar(snackbar);
   }
 
@@ -289,87 +325,140 @@ Widget formFields(){
             key: _formKey,
             child: Column(
               children: [
-            TextFormField(
-              enabled: false,
-              initialValue: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextFormField(
+                enabled: false,
+                initialValue: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                ),
               ),
             ),
-               TextFormField(
-                 enabled: false,
-                      decoration: InputDecoration(
-                        labelText: 'Username',
-                        labelStyle: TextStyle(
-                          fontSize: 18.0,
+               Padding(
+                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                 child: TextFormField(
+                   enabled: true,
+                        decoration: InputDecoration(
+                          labelText: 'Username',
+                          labelStyle: TextStyle(
+                            fontSize: 18.0,
+                          ),
                         ),
+                        keyboardType: TextInputType.text,
+                        controller: _usernameController,
+                        // focusNode: _focusNodeUsernameController,
+                        validator: _validateMinLength,
+                        onSaved: (val) => _username = val,
                       ),
-                      keyboardType: TextInputType.text,
-                      controller: _usernameController,
-                      // focusNode: _focusNodeUsernameController,
-                      validator: _validateMinLength,
-                      onSaved: (val) => _username = val,
+               ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Nome e Cognome',
+                      labelStyle: TextStyle(
+                        fontSize: 18.0,
+                      ),
                     ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Nome e Cognome',
-                    labelStyle: TextStyle(
-                      fontSize: 18.0,
-                    ),
+                    keyboardType: TextInputType.text,
+                    controller: _fullNameController,
+                    // focusNode: _focusNodeFullNameController,
+                    validator: _validateString,
+                    onSaved: (val) => _fullName = val,
                   ),
-                  keyboardType: TextInputType.text,
-                  controller: _fullNameController,
-                  // focusNode: _focusNodeFullNameController,
-                  validator: _validateString,
-                  onSaved: (val) => _fullName = val,
-                ),
-
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Numero Telefonico',
-                    labelStyle: TextStyle(
-                      fontSize: 18.0,
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  controller: _phoneNumberController,
-                  // focusNode: _focusNodePhoneNumberController,
-                  validator: _validateString,
-                  onSaved: (val) => _phoneNumber = val,
                 ),
 
 
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Numero Telefonico',
+                      labelStyle: TextStyle(
+                        fontSize: 18.0,
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    controller: _phoneNumberController,
+                    // focusNode: _focusNodePhoneNumberController,
+                    validator: _validateString,
+                    onSaved: (val) => _phoneNumber = val,
+                  ),
+                ),
+                SizedBox(height: 15,),
+                SwitchListTile(
+                    title: Text("Operatore Punto Vendita"),
+                    subtitle: Text("Se si sta richiedendo l'account per poter effettuare ordini per conto di un punto vendita"),
+                    value: _operatorePuntoVendita!,
+                    inactiveTrackColor: Colors.grey[300],
+                    activeColor: Colors.green,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _operatorePuntoVendita = value;
+                      });
+                    }),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    maxLines: 2,
+                    onSaved: (value) => _note = value ?? '',
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      hintText: 'Note Aggiuntive',
+                    ),
+                  ),
+                ),
               const SizedBox(
                 height: 35.0,
               ),
-              RoundedLoadingButton(
-                borderRadius: 15,
-                color: Colors.green,
-                controller: _updateProfileBtnController,
-                onPressed: () {
-                  // _onUpdateProfilePress(context);
-                  _validateInputs();
-                },
-                child: const Text('Aggiorna Profilo',
-                    style: TextStyle(fontSize: 20, color: Colors.white)),
-              ),
-              TextButton(
-                onPressed: () {
-                   Navigator.pushNamed(context, '/profile/changePassword',arguments: _options);
-                },
-                child: const Text("Cambia password"),
-              ),
-              RoundedLoadingButton(
-                borderRadius: 15,
-                color: Colors.red,
-                controller: _signOutBtnController,
-                onPressed: () {
-                  _onSignOutPress(context);
-                },
-                child: const Text('Cambia utente',
-                    style: TextStyle(fontSize: 20, color: Colors.white)),
-              ),
+
+                RoundedLoadingButton(
+                  borderRadius: 15,
+                  color: Colors.green,
+                  controller: _updateProfileBtnController,
+                  onPressed: () {
+                    _validateInputs();
+                  },
+                  child: const Text('Aggiorna Profilo',
+                      style: TextStyle(fontSize: 20, color: Colors.white)),
+                ),
+
+                SizedBox(height: 25,),
+              ListTile(title: Text("Cambia Utente",style: TextStyle(color: Colors.purple[300]),),trailing: IconButton(icon: UiIcons.chevronRight,
+                  onPressed: ()=> _onSignOutPress(context),),),
+                SizedBox(height: 15,),
+
+
+              // RoundedLoadingButton(
+              //   borderRadius: 15,
+              //   color: Colors.green,
+              //   controller: _updateProfileBtnController,
+              //   onPressed: () {
+              //     // _onUpdateProfilePress(context);
+              //     _validateInputs();
+              //   },
+              //   child: const Text('Aggiorna Profilo',
+              //       style: TextStyle(fontSize: 20, color: Colors.white)),
+              // ),
+              // // TextButton(
+              // //   onPressed: () {
+              // //      Navigator.pushNamed(context, '/profile/changePassword',arguments: _options);
+              // //   },
+              // //   child: const Text("Cambia password"),
+              // // ),
+              // RoundedLoadingButton(
+              //   borderRadius: 15,
+              //   color: Colors.red,
+              //   controller: _signOutBtnController,
+              //   onPressed: () {
+              //     _onSignOutPress(context);
+              //   },
+              //   child: const Text('Cambia utente',
+              //       style: TextStyle(fontSize: 20, color: Colors.white)),
+              // ),
             ],),
           ),
         ),
@@ -438,7 +527,7 @@ Widget formFields(){
 //         loadingImage = false;
 //       });
 //     } else {
-//       print(response.error!.message);
+//       debugPrint(response.error!.message);
 //       setState(() {
 //         loadingImage = false;
 //       });

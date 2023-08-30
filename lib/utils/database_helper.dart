@@ -6,7 +6,7 @@ import 'package:bufalabuona/utils/app_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = new DatabaseHelper.internal();
+  static final DatabaseHelper _instance =  DatabaseHelper.internal();
 
   factory DatabaseHelper() => _instance;
 

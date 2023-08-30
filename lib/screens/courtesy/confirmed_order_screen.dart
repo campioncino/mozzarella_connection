@@ -5,6 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
+import '../../utils/ui_icons.dart';
+
 class ConfirmedOrderScreen extends StatefulWidget {
 
   final Map<String?, dynamic>? options;
@@ -49,7 +51,7 @@ class _ConfirmedOrderScreenState extends State<ConfirmedOrderScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(FontAwesomeIcons.check,size: 66,color: Colors.white,),
+                    UiIcons.confirmed,
                     Text("Caro ${AppUtils.utente.name},",style: TextStyle(color: Colors.white,fontSize: 22),),
                     Text("Grazie per aver effettuato l'ordine!",style: TextStyle(color: Colors.white,fontSize: 40,fontWeight: FontWeight.w800),),
                   ],

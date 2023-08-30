@@ -50,4 +50,6 @@ class ListinoProdottiExt extends ListinoProdotti {
   String? listIniVal;
   @JsonKey(name:'prod_unimis_descrizione')
   String? prodUnimisDescrizione;
+  @JsonKey(name:'image_url')
+  String? imageUrl;
 }

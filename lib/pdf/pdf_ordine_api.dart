@@ -22,9 +22,6 @@ class PdfOrdineApi {
     final font = await rootBundle.load("assets/fonts/open_sans_regular.ttf");
 
 
-
-    // String? logo = await rootBundle.loadString('assets/images/bbc.svg');
-
     pdf.addPage(MultiPage(
       theme: ThemeData.withFont(
         base: Font.ttf(await rootBundle.load("assets/fonts/arial.ttf")),

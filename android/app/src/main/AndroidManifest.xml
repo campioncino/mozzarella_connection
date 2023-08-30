@@ -1,17 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.aziendaagricoladangelo">
+    package="com.aziendaagricoladangelo.bufalabuona">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Permissions options for the `manage external storage` group -->
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+<!--    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />-->
 
     <!-- Required only if your app targets Android 13 or higher. -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+<!--    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+<!--    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />-->
 
    <application
         android:label="Bufala Buona"
@@ -19,6 +19,7 @@
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -36,6 +37,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with YOUR_SCHEME://YOUR_HOST -->
+                <!-- guardare nel file .env.release -->
+                <data
+                    android:scheme="io.supabase.flutterdemo"
+                    android:host="//login-callback" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

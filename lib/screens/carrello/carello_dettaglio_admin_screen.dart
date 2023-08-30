@@ -17,6 +17,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
+import '../../utils/ui_icons.dart';
+
 class CarrelloDettaglioAdminScreen extends StatefulWidget {
   final PuntoVendita? puntoVendita;
   final Ordine? ordine;
@@ -159,7 +161,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
                 TextButton.icon(
                   onPressed: ()=>aggiungiProdotto(),
                   label: Text("AGGIUNGI PRODOTTO"),
-                  icon: Icon(Icons.add, size: 20),
+                  icon: Icon(UiIcons.addIco, size: 20),
                 ),
               ],
             ),
@@ -177,7 +179,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
       return AppUtils.loader(context);
     }
     if (this._adminValues.isEmpty) {
-      return AppUtils.emptyList(context,FontAwesomeIcons.slash);
+      return AppUtils.emptyList(context,UiIcons.emptyIco);
     }
     var list = ListView.builder(
         itemCount: _adminValues.length,
@@ -236,7 +238,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
                                       color: _isReadOnly ? Colors.grey :Colors.white,
                                       borderRadius: BorderRadius.circular(50),
                                       border: Border.all(width: 4, color: _isReadOnly ? Colors.grey :Colors.white)),
-                                  child: (listini.quantita!=null && listini.quantita!>1) ? Icon(FontAwesomeIcons.minus,size: 20,color: _isReadOnly ? Colors.white70 :Colors.black54):Icon(FontAwesomeIcons.trash, size: 22, color: _isReadOnly ? Colors.white70 : Colors.red,)),
+                                  child: (listini.quantita!=null && listini.quantita!>1) ? Icon(UiIcons.minusIco,size: 20,color: _isReadOnly ? Colors.white70 :Colors.black54):Icon(UiIcons.trashIco, size: 22, color: _isReadOnly ? Colors.white70 : Colors.red,)),
                                     onPressed:  _isReadOnly ? null : (){setState(() {
                                     if(listini.quantita!>0){listini.quantita = listini.quantita!-1;}
                                   });}),
@@ -252,11 +254,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
                                         border: Border.all(
                                             width: 5,
                                             color:  _isReadOnly ? Colors.grey :Colors.teal[800]!,)),
-                                    child: Icon(
-                                      FontAwesomeIcons.plus,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    )),
+                                    child: UiIcons.plus),
                                 onPressed: _isReadOnly ? null : () {
                                   setState(() {
                                     if (listini.quantita != null) {
@@ -292,7 +290,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
 
   Widget puntoVenditaCard(){
     return ListTile(
-        leading: Icon(FontAwesomeIcons.house),
+        leading: UiIcons.house,
     title:Text("${_puntoVendita!.denominazione}"),
         subtitle: Text("${_puntoVendita!.ragSociale}"));
 
@@ -306,7 +304,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
         Text("Ordine #${_ordine!.numero}",style: TextStyle(fontWeight: FontWeight.w600),),
-        Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt!??'')?.substring(0,10)}"),
+        Text("del ${AppUtils.convertTimestamptzToStringDate(_ordine!.createdAt ??'')?.substring(0,10)}"),
       ],),
     );}
 
@@ -343,7 +341,7 @@ class _CarrelloDettaglioAdminScreenState extends State<CarrelloDettaglioAdminScr
       var price= value.price! * value.quantita!;
       total+=price;
     });
-    return total.toString();
+    return total.toStringAsFixed(2);
   }
 
   aggiungiProdotto() async{

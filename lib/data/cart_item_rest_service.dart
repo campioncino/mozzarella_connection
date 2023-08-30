@@ -96,7 +96,8 @@ class CartItemRestService {
 
   /// A QUANTO PARE L'UPSERT non gestisce INSERT E UPDATE CON ID NULL ...e allora a che cazzo serve?
   Future<WSResponse> upsertMultipleCartItem(List<CartItem> listItem) async{
-    WSResponse result = new WSResponse();
+
+    WSResponse result =  WSResponse();
     var o=AppUtils.removeNull(listItem.map((e) => e.tableMap()).toList());
     try{
       var response = await Supabase.instance.client
@@ -112,7 +113,7 @@ class CartItemRestService {
       //   result.errors!.add(err);
       // }
     }catch(e){
-      WSErrorResponse err = new WSErrorResponse();
+      WSErrorResponse err =  WSErrorResponse();
       err.message=e.toString();
       result.errors ??= [];
       result.errors!.add(err);
@@ -122,7 +123,7 @@ class CartItemRestService {
 
 
   Future<WSResponse> insertMultipleCartItem(List<CartItem> listItem) async{
-    WSResponse result = new WSResponse();
+    WSResponse result =  WSResponse();
     var o=AppUtils.removeNull(listItem.map((e) => e.tableMap()).toList());
     try{
       var response = await Supabase.instance.client
@@ -132,7 +133,7 @@ class CartItemRestService {
         result = AppUtils.parseWSResponse(response);
       }
     }catch(e){
-      WSErrorResponse err = new WSErrorResponse();
+      WSErrorResponse err =  WSErrorResponse();
       err.message=e.toString();
       result.errors ??= [];
       result.errors!.add(err);
@@ -142,7 +143,7 @@ class CartItemRestService {
 
 
   Future<WSResponse> getCartItemByOrdineId(int id) async{
-    WSResponse result = new WSResponse();
+    WSResponse result =  WSResponse();
     try{
       var response = await Supabase.instance.client
           .from(CartItemExt.TABLE_NAME)
@@ -161,7 +162,7 @@ class CartItemRestService {
       //   result.errors!.add(err);
       // }
     }catch(e){
-      WSErrorResponse err = new WSErrorResponse();
+      WSErrorResponse err =  WSErrorResponse();
       err.message=e.toString();
       result.errors ??= [];
       result.errors!.add(err);
@@ -170,7 +171,7 @@ class CartItemRestService {
   }
 
   Future<WSResponse> getCartItemExtByOrdineId(int id) async{
-    WSResponse result = new WSResponse();
+    WSResponse result =  WSResponse();
     try{
       var response = await Supabase.instance.client
           .from(CartItemExt.TABLE_NAME)
@@ -189,7 +190,7 @@ class CartItemRestService {
       //   result.errors!.add(err);
       // }
     }catch(e){
-      WSErrorResponse err = new WSErrorResponse();
+      WSErrorResponse err =  WSErrorResponse();
       err.message=e.toString();
       result.errors ??= [];
       result.errors!.add(err);

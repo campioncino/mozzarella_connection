@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.aziendaagricoladangelo.bufalabuona",
+      "sha256_cert_fingerprints": [
+        "97:F2:45:E0:03:DE:37:B6:56:06:3A:75:A0:B8:43:60:D1:52:32:32:BC:29:A2:4B:50:DE:37:15:F4:4C:2E:18"
+      ]
+    }
+  }
+]
